@@ -2,8 +2,9 @@
     'use strict';
 
     const CONFIG = {
-        apiUrl: '/api/get-content.php',
-        trackUrl: '/api/track.php',
+    apiUrl: null,  // не используем API
+    trackUrl: null, // не используем API
+    useLocalStorage: true, // ВКЛЮЧАЕМ РЕЖИМ localStorage
         defaultLinks: { register: '#', play: '#' },
         bonusEndTime: new Date().getTime() + (5 * 3600 + 42 * 60 + 18) * 1000,
     };
