@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LuckyBear Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter',sans-serif;background:#0B0E17;color:#fff;min-height:100vh;padding:16px}
+        .container{max-width:800px;margin:0 auto}
+        .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+        .logo{font-size:1.5rem;font-weight:700;color:#39FF14}
+        .tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+        .tab{padding:10px 20px;background:#161B29;border:1px solid #1E2538;border-radius:50px;color:#9BA3B5;cursor:pointer;font-size:.85rem}
+        .tab.active{background:linear-gradient(135deg,#39FF14,#00F0FF);color:#0B0E17;border-color:transparent;font-weight:600}
+        .card{background:#161B29;border:1px solid #1E2538;border-radius:16px;padding:20px;margin-bottom:16px}
+        .card h3{margin-bottom:16px;font-size:1.1rem}
+        .form-group{margin-bottom:12px}
+        .form-group label{display:block;color:#9BA3B5;margin-bottom:4px;font-size:.85rem}
+        .form-group input,.form-group textarea,.form-group select{width:100%;padding:10px 14px;background:#0B0E17;border:1px solid #1E2538;border-radius:10px;color:#fff;font-size:.9rem}
+        .form-group textarea{resize:vertical;min-height:60px}
+        .btn{padding:10px 24px;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-size:.9rem}
+        .btn-primary{background:linear-gradient(135deg,#39FF14,#00F0FF);color:#0B0E17}
+        .btn-danger{background:#ff4444;color:#fff;margin-left:8px}
+        .btn-outline{background:transparent;border:1px solid #1E2538;color:#9BA3B5}
+        .item-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #1E2538;gap:8px;flex-wrap:wrap}
+        .item-info{flex:1;min-width:150px}
+        .item-name{font-weight:600}.item-meta{color:#9BA3B5;font-size:.8rem}
+        .item-actions{display:flex;gap:8px}
+        .badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:.7rem;font-weight:600}
+        .badge-on{background:rgba(57,255,20,0.2);color:#39FF14}
+        .badge-off{background:rgba(255,68,68,0.2);color:#ff4444}
+        .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+        .stat-box{background:#161B29;border:1px solid #1E2538;border-radius:12px;padding:16px;text-align:center}
+        .stat-num{font-size:1.8rem;font-weight:700;color:#39FF14}
+        .stat-label{color:#9BA3B5;font-size:.75rem;margin-top:4px}
+        .login-box{max-width:360px;margin:80px auto;text-align:center}
+        .login-box input{width:100%;padding:12px;background:#0B0E17;border:1px solid #1E2538;border-radius:10px;color:#fff;margin-bottom:12px;font-size:1rem}
+        .error{color:#ff4444;margin-bottom:12px;font-size:.85rem}
+        @media(max-width:480px){.header{flex-direction:column;align-items:flex-start}}
+    </style>
+</head>
+<body>
+<div class="container" id="app">
+    <!-- Экран логина -->
+    <div id="loginScreen">
+        <div class="login-box">
+            <div class="logo" style="font-size:2rem;margin-bottom:24px">🐻 LuckyBear Admin</div>
+            <input type="password" id="passInput" placeholder="Пароль">
+            <div class="error" id="loginError" style="display:none">Неверный пароль</div>
+            <button class="btn btn-primary" onclick="login()" style="width:100%">Войти</button>
+            <p style="color:#6B7280;font-size:.75rem;margin-top:12px">Пароль по умолчанию: admin123</p>
+        </div>
+    </div>
+
+    <!-- Админка -->
+    <div id="adminScreen" style="display:none">
+        <div class="header">
+            <div class="logo">🐻 LuckyBear Admin</div>
+            <button class="btn btn-outline" onclick="logout()">Выйти</button>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('links')">🔗 Ссылки</button>
+            <button class="tab" onclick="switchTab('games')">🎮 Игры</button>
+            <button class="tab" onclick="switchTab('reviews')">⭐ Отзывы</button>
+            <button class="tab" onclick="switchTab('stats')">📊 Статистика</button>
+        </div>
+
+        <!-- Статистика -->
+        <div id="tab-stats" style="display:none">
+            <div class="stats-grid" id="statsGrid"></div>
+            <div class="card">
+                <h3>Последние события</h3>
+                <div id="eventsList"></div>
+            </div>
+        </div>
+
+        <!-- Ссылки -->
+        <div id="tab-links">
+            <div class="card">
+                <h3>Управление ссылками</h3>
+                <div class="form-group"><label>Ссылка "Забрать бонус" (Регистрация)</label><input id="regLink" placeholder="https://..."></div>
+                <div class="form-group"><label>Ссылка "Играть"</label><input id="playLink" placeholder="https://..."></div>
+                <button class="btn btn-primary" onclick="saveLinks()">💾 Сохранить</button>
+            </div>
+        </div>
+
+        <!-- Игры -->
+        <div id="tab-games" style="display:none">
+            <div class="card">
+                <h3 id="gameFormTitle">Добавить игру</h3>
+                <input type="hidden" id="gameEditId">
+                <div class="form-group"><label>Название</label><input id="gameName" placeholder="Gates of Olympus"></div>
+                <div class="form-group"><label>Emoji</label><input id="gameIcon" placeholder="🏛️"></div>
+                <div class="form-group"><label>RTP</label><input id="gameRtp" placeholder="96.50"></div>
+                <div class="form-group"><label>Провайдер</label><input id="gameProvider" placeholder="Pragmatic Play"></div>
+                <div class="form-group"><label>Категория</label><select id="gameCat"><option value="slots">Слоты</option><option value="live">Live</option><option value="crash">Краш</option></select></div>
+                <div class="form-group"><label><input type="checkbox" id="gameActive" checked> Активна</label></div>
+                <button class="btn btn-primary" onclick="saveGame()">💾 Сохранить</button>
+                <button class="btn btn-outline" onclick="cancelEdit()" id="gameCancelBtn" style="display:none">Отмена</button>
+            </div>
+            <div class="card"><h3>Список игр</h3><div id="gamesList"></div></div>
+        </div>
+
+        <!-- Отзывы -->
+        <div id="tab-reviews" style="display:none">
+            <div class="card">
+                <h3 id="reviewFormTitle">Добавить отзыв</h3>
+                <input type="hidden" id="reviewEditId">
+                <div class="form-group"><label>Имя</label><input id="reviewName" placeholder="Мария К."></div>
+                <div class="form-group"><label>Emoji</label><input id="reviewAvatar" placeholder="👩‍🦰"></div>
+                <div class="form-group"><label>Звёзды (1-5)</label><input id="reviewStars" type="number" min="1" max="5" value="5"></div>
+                <div class="form-group"><label>Текст</label><textarea id="reviewText" placeholder="Отличное казино..."></textarea></div>
+                <div class="form-group"><label><input type="checkbox" id="reviewActive" checked> Активен</label></div>
+                <button class="btn btn-primary" onclick="saveReview()">💾 Сохранить</button>
+                <button class="btn btn-outline" onclick="cancelEdit()" id="reviewCancelBtn" style="display:none">Отмена</button>
+            </div>
+            <div class="card"><h3>Список отзывов</h3><div id="reviewsList"></div></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============ ДАННЫЕ ============
+const DEFAULT_PASSWORD = 'admin123';
+const STORAGE_KEY = 'luckybear_admin';
+
+function getData() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+    const def = {
+        password: DEFAULT_PASSWORD,
+        links: { register_link: '#', play_link: '#' },
+        games: [
+            {id:1,name:"Gates of Olympus",icon:"🏛️",rtp:"96.50",provider:"Pragmatic Play",category:"slots",is_active:true},
+            {id:2,name:"Sweet Bonanza",icon:"🍬",rtp:"96.51",provider:"Pragmatic Play",category:"slots",is_active:true},
+            {id:3,name:"Book of Dead",icon:"📖",rtp:"96.21",provider:"Play'n GO",category:"slots",is_active:true},
+            {id:4,name:"Aviator",icon:"✈️",rtp:"97.00",provider:"Spribe",category:"crash",is_active:true},
+            {id:5,name:"Crazy Time",icon:"🎡",rtp:"96.08",provider:"Evolution",category:"live",is_active:true},
+            {id:6,name:"Big Bamboo",icon:"🐼",rtp:"96.13",provider:"Push Gaming",category:"slots",is_active:true}
+        ],
+        reviews: [
+            {id:1,name:"Мария К.",avatar:"👩‍🦰",stars:5,text:"Регистрировалась ради фриспинов, а в итоге подняла x1200 в Gates of Olympus. Вывела за 5 минут!",is_active:true},
+            {id:2,name:"Алексей В.",avatar:"👨",stars:5,text:"Медведь реально щедрый. Закинул 1000 рублей, играл в Aviator. Вывод пришел мгновенно.",is_active:true},
+            {id:3,name:"Игорь L.",avatar:"🧔",stars:5,text:"Лучший саппорт! Помогли разобраться с вейджером за пару минут. Всё честно.",is_active:true}
+        ],
+        events: []
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(def));
+    return def;
+}
+
+function saveData(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+
+function trackEvent(event, meta = '') {
+    const d = getData();
+    d.events.unshift({event, meta, time: new Date().toLocaleString('ru')});
+    if (d.events.length > 100) d.events = d.events.slice(0, 100);
+    saveData(d);
+}
+
+// ============ АВТОРИЗАЦИЯ ============
+function login() {
+    const pass = document.getElementById('passInput').value;
+    const d = getData();
+    if (pass === d.password) {
+        sessionStorage.setItem('admin_auth', '1');
+        showAdmin();
+    } else {
+        document.getElementById('loginError').style.display = 'block';
+    }
+}
+
+function logout() {
+    sessionStorage.removeItem('admin_auth');
+    location.reload();
+}
+
+function showAdmin() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('adminScreen').style.display = 'block';
+    switchTab('links');
+}
+
+// ============ ТАБЫ ============
+function switchTab(tab) {
+    ['links','games','reviews','stats'].forEach(t => document.getElementById('tab-'+t).style.display = 'none');
+    document.getElementById('tab-'+tab).style.display = 'block';
+    document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', t.textContent.includes({'links':'Ссылки','games':'Игры','reviews':'Отзывы','stats':'Статистика'}[tab])));
+    if (tab === 'links') loadLinks();
+    if (tab === 'games') loadGames();
+    if (tab === 'reviews') loadReviews();
+    if (tab === 'stats') loadStats();
+}
+
+// ============ ССЫЛКИ ============
+function loadLinks() {
+    const d = getData();
+    document.getElementById('regLink').value = d.links.register_link;
+    document.getElementById('playLink').value = d.links.play_link;
+}
+
+function saveLinks() {
+    const d = getData();
+    d.links.register_link = document.getElementById('regLink').value;
+    d.links.play_link = document.getElementById('playLink').value;
+    saveData(d);
+    trackEvent('links_updated');
+    alert('✅ Ссылки сохранены!');
+}
+
+// ============ ИГРЫ ============
+function loadGames() {
+    const d = getData();
+    document.getElementById('gamesList').innerHTML = d.games.map(g => `
+        <div class="item-row">
+            <div class="item-info"><span class="item-name">${g.icon} ${g.name}</span><br><span class="item-meta">RTP ${g.rtp}% | ${g.provider} | ${g.category}</span></div>
+            <span class="badge ${g.is_active?'badge-on':'badge-off'}">${g.is_active?'Активна':'Скрыта'}</span>
+            <div class="item-actions">
+                <button class="btn btn-outline" style="padding:6px 12px;font-size:.75rem" onclick="editGame(${g.id})">✏️</button>
+                <button class="btn btn-danger" style="padding:6px 12px;font-size:.75rem" onclick="deleteGame(${g.id})">🗑</button>
+            </div>
+        </div>`).join('');
+}
+
+function editGame(id) {
+    const d = getData();
+    const g = d.games.find(x => x.id === id);
+    if (!g) return;
+    document.getElementById('gameEditId').value = g.id;
+    document.getElementById('gameName').value = g.name;
+    document.getElementById('gameIcon').value = g.icon;
+    document.getElementById('gameRtp').value = g.rtp;
+    document.getElementById('gameProvider').value = g.provider;
+    document.getElementById('gameCat').value = g.category;
+    document.getElementById('gameActive').checked = g.is_active;
+    document.getElementById('gameFormTitle').textContent = 'Редактировать игру';
+    document.getElementById('gameCancelBtn').style.display = 'inline-block';
+    switchTab('games');
+}
+
+function cancelEdit() {
+    document.getElementById('gameEditId').value = '';
+    document.getElementById('reviewEditId').value = '';
+    document.getElementById('gameName').value = '';
+    document.getElementById('gameIcon').value = '';
+    document.getElementById('gameRtp').value = '';
+    document.getElementById('gameProvider').value = '';
+    document.getElementById('reviewName').value = '';
+    document.getElementById('reviewAvatar').value = '';
+    document.getElementById('reviewText').value = '';
+    document.getElementById('gameFormTitle').textContent = 'Добавить игру';
+    document.getElementById('reviewFormTitle').textContent = 'Добавить отзыв';
+    document.getElementById('gameCancelBtn').style.display = 'none';
+    document.getElementById('reviewCancelBtn').style.display = 'none';
+    loadGames(); loadReviews();
+}
+
+function saveGame() {
+    const d = getData();
+    const id = document.getElementById('gameEditId').value;
+    const obj = {
+        id: id ? parseInt(id) : Date.now(),
+        name: document.getElementById('gameName').value,
+        icon: document.getElementById('gameIcon').value,
+        rtp: document.getElementById('gameRtp').value,
+        provider: document.getElementById('gameProvider').value,
+        category: document.getElementById('gameCat').value,
+        is_active: document.getElementById('gameActive').checked
+    };
+    if (id) {
+        const idx = d.games.findIndex(x => x.id === parseInt(id));
+        if (idx >= 0) d.games[idx] = obj;
+    } else {
+        d.games.push(obj);
+    }
+    saveData(d);
+    trackEvent('game_saved', obj.name);
+    cancelEdit();
+    alert('✅ Сохранено!');
+}
+
+function deleteGame(id) {
+    if (!confirm('Удалить игру?')) return;
+    const d = getData();
+    d.games = d.games.filter(x => x.id !== id);
+    saveData(d);
+    trackEvent('game_deleted');
+    loadGames();
+}
+
+// ============ ОТЗЫВЫ ============
+function loadReviews() {
+    const d = getData();
+    document.getElementById('reviewsList').innerHTML = d.reviews.map(r => `
+        <div class="item-row">
+            <div class="item-info"><span class="item-name">${r.avatar} ${r.name} ${'⭐'.repeat(r.stars)}</span><br><span class="item-meta">${r.text.substring(0,60)}...</span></div>
+            <span class="badge ${r.is_active?'badge-on':'badge-off'}">${r.is_active?'Активен':'Скрыт'}</span>
+            <div class="item-actions">
+                <button class="btn btn-outline" style="padding:6px 12px;font-size:.75rem" onclick="editReview(${r.id})">✏️</button>
+                <button class="btn btn-danger" style="padding:6px 12px;font-size:.75rem" onclick="deleteReview(${r.id})">🗑</button>
+            </div>
+        </div>`).join('');
+}
+
+function editReview(id) {
+    const d = getData();
+    const r = d.reviews.find(x => x.id === id);
+    if (!r) return;
+    document.getElementById('reviewEditId').value = r.id;
+    document.getElementById('reviewName').value = r.name;
+    document.getElementById('reviewAvatar').value = r.avatar;
+    document.getElementById('reviewStars').value = r.stars;
+    document.getElementById('reviewText').value = r.text;
+    document.getElementById('reviewActive').checked = r.is_active;
+    document.getElementById('reviewFormTitle').textContent = 'Редактировать отзыв';
+    document.getElementById('reviewCancelBtn').style.display = 'inline-block';
+    switchTab('reviews');
+}
+
+function saveReview() {
+    const d = getData();
+    const id = document.getElementById('reviewEditId').value;
+    const obj = {
+        id: id ? parseInt(id) : Date.now(),
+        name: document.getElementById('reviewName').value,
+        avatar: document.getElementById('reviewAvatar').value,
+        stars: parseInt(document.getElementById('reviewStars').value),
+        text: document.getElementById('reviewText').value,
+        is_active: document.getElementById('reviewActive').checked
+    };
+    if (id) {
+        const idx = d.reviews.findIndex(x => x.id === parseInt(id));
+        if (idx >= 0) d.reviews[idx] = obj;
+    } else {
+        d.reviews.push(obj);
+    }
+    saveData(d);
+    trackEvent('review_saved', obj.name);
+    cancelEdit();
+    alert('✅ Сохранено!');
+}
+
+function deleteReview(id) {
+    if (!confirm('Удалить отзыв?')) return;
+    const d = getData();
+    d.reviews = d.reviews.filter(x => x.id !== id);
+    saveData(d);
+    trackEvent('review_deleted');
+    loadReviews();
+}
+
+// ============ СТАТИСТИКА ============
+function loadStats() {
+    const d = getData();
+    const total = d.events.length;
+    const today = d.events.filter(e => e.time.includes(new Date().toLocaleDateString('ru'))).length;
+    document.getElementById('statsGrid').innerHTML = `
+        <div class="stat-box"><div class="stat-num">${total}</div><div class="stat-label">Всего событий</div></div>
+        <div class="stat-box"><div class="stat-num">${today}</div><div class="stat-label">Сегодня</div></div>
+        <div class="stat-box"><div class="stat-num">${d.games.length}</div><div class="stat-label">Игр</div></div>
+        <div class="stat-box"><div class="stat-num">${d.reviews.length}</div><div class="stat-label">Отзывов</div></div>
+    `;
+    document.getElementById('eventsList').innerHTML = d.events.slice(0, 20).map(e => 
+        `<div class="item-row"><span>${e.time}</span> <strong>${e.event}</strong> <span style="color:#9BA3B5">${e.meta}</span></div>`
+    ).join('') || '<p style="color:#6B7280">Событий пока нет</p>';
+}
+
+// ============ ИНИЦИАЛИЗАЦИЯ ============
+function init() {
+    // Создаём данные если первый запуск
+    getData();
+    
+    if (sessionStorage.getItem('admin_auth') === '1') {
+        showAdmin();
+    }
+    
+    // Отслеживаем вход в админку
+    if (sessionStorage.getItem('admin_auth') === '1') {
+        trackEvent('admin_login');
+    }
+}
+
+init();
+</script>
+</body>
+  </html>
