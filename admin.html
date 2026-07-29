@@ -65,6 +65,8 @@
         .modal-overlay.active{display:flex}
         .modal-box{background:#161B29;border:1px solid #1E2538;border-radius:16px;padding:24px;max-width:600px;width:100%;max-height:80vh;overflow-y:auto}
         .modal-close{float:right;background:none;border:none;color:#fff;font-size:1.5rem;cursor:pointer}
+        .empty-state{text-align:center;padding:40px;color:#6B7280}
+        .empty-state .icon{font-size:3rem;margin-bottom:12px}
         @media(max-width:768px){.charts-grid{grid-template-columns:1fr}.header{flex-direction:column;align-items:flex-start}}
     </style>
 </head>
@@ -84,7 +86,10 @@
     <div id="adminScreen" style="display:none">
         <div class="header">
             <div class="logo">🐻 LuckyBear Admin</div>
-            <button class="btn btn-outline" onclick="logout()">🚪 Выйти</button>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn btn-outline btn-sm" onclick="resetStats()" style="color:#ff6b6b">🗑 Сбросить статистику</button>
+                <button class="btn btn-outline" onclick="logout()">🚪 Выйти</button>
+            </div>
         </div>
 
         <div class="tabs">
@@ -96,10 +101,7 @@
 
         <!-- ==================== СТАТИСТИКА ==================== -->
         <div id="tab-stats">
-            <!-- Верхние метрики -->
             <div class="stats-grid" id="statsGrid"></div>
-
-            <!-- Графики -->
             <div class="charts-grid">
                 <div class="chart-box"><canvas id="chartVisits"></canvas></div>
                 <div class="chart-box"><canvas id="chartDevices"></canvas></div>
@@ -107,19 +109,12 @@
                 <div class="chart-box"><canvas id="chartGeo"></canvas></div>
                 <div class="chart-box"><canvas id="chartTimeOnSite"></canvas></div>
             </div>
-
-            <!-- Таблица пользователей -->
             <div class="card">
                 <h3>👥 Пользователи (кликните для деталей)</h3>
-                <div class="table-wrap">
-                    <table>
-                        <thead><tr><th>Пользователь</th><th>Страна</th><th>Устройство</th><th>Кликов</th><th>Время на сайте</th><th>Последняя активность</th></tr></thead>
-                        <tbody id="usersTable"></tbody>
-                    </table>
+                <div id="usersTableWrap">
+                    <div class="empty-state"><div class="icon">👥</div><p>Пока нет данных</p><p style="font-size:.8rem;margin-top:4px">Статистика появится, когда посетители зайдут на лендинг</p></div>
                 </div>
             </div>
-
-            <!-- Последние события -->
             <div class="card"><h3>📋 Лента событий</h3><div id="eventsFeed" style="max-height:300px;overflow-y:auto"></div></div>
         </div>
 
@@ -186,7 +181,7 @@
     </div>
 </div>
 
-<!-- Модалка деталей пользователя -->
+<!-- Модалка пользователя -->
 <div class="modal-overlay" id="userModal">
     <div class="modal-box">
         <button class="modal-close" onclick="closeUserModal()">&times;</button>
@@ -196,96 +191,52 @@
 </div>
 
 <script>
-// ==================== ДАННЫЕ И ГЕНЕРАЦИЯ ====================
+// ==================== КОНСТАНТЫ ====================
 const STORAGE_KEY = 'luckybear_admin';
 const DEFAULT_PASSWORD = 'admin123';
 
-// Никнеймы
-const NICKNAMES = ['LuckyFox','BearKing','SlotMaster','GoldHunter','SpinLord','CasinoWolf','JackPotter','DiceRoller','BetShark','WildAce','RoyalFlush','ChipStacker','FortuneCat','AceKnight','VegasSoul','SpinnerQueen','CoinDropper','DeckHero','CashNinja','RoulettePro'];
-
-// Страны с флагами и городами
-const COUNTRIES = [
-    {code:'RU',flag:'🇷🇺',name:'Россия',cities:['Москва','СПб','Казань','Сочи','Новосибирск','Екб']},
-    {code:'DE',flag:'🇩🇪',name:'Германия',cities:['Берлин','Мюнхен','Гамбург','Кёльн']},
-    {code:'TR',flag:'🇹🇷',name:'Турция',cities:['Стамбул','Анкара','Анталья']},
-    {code:'KZ',flag:'🇰🇿',name:'Казахстан',cities:['Алматы','Астана']},
-    {code:'BR',flag:'🇧🇷',name:'Бразилия',cities:['Сан-Паулу','Рио']},
-    {code:'IN',flag:'🇮🇳',name:'Индия',cities:['Мумбаи','Дели']},
-    {code:'CA',flag:'🇨🇦',name:'Канада',cities:['Торонто','Ванкувер']},
-    {code:'UA',flag:'🇺🇦',name:'Украина',cities:['Киев','Одесса']},
-    {code:'PL',flag:'🇵🇱',name:'Польша',cities:['Варшава','Краков']},
-    {code:'UZ',flag:'🇺🇿',name:'Узбекистан',cities:['Ташкент']},
-];
-
-const DEVICES = ['📱 Mobile','💻 Desktop','📲 Tablet'];
-const OS_LIST = ['iOS 17','Android 14','Windows 11','macOS','iPadOS','Linux'];
-const BROWSERS = ['Chrome','Safari','Firefox','Edge','Samsung Internet','Opera'];
-const SCREENS = ['375×812','414×896','390×844','1920×1080','1440×900','1366×768','834×1194'];
-
-function random(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
-function randInt(min,max) { return Math.floor(Math.random()*(max-min+1))+min; }
-
-// Генерация юзера
-function genUser(id) {
-    const country = random(COUNTRIES);
-    return {
-        id, nick: random(NICKNAMES), country, city: random(country.cities),
-        device: random(DEVICES), os: random(OS_LIST), browser: random(BROWSERS), screen: random(SCREENS),
-        firstVisit: new Date(Date.now()-randInt(0,14*86400000)).toISOString(),
-        lastActive: new Date(Date.now()-randInt(0,86400000)).toISOString(),
-        timeOnSite: randInt(15,3600),
-        clicks: [],
-        ip: `${randInt(1,255)}.${randInt(0,255)}.${randInt(0,255)}.${randInt(1,254)}`
-    };
-}
-
-function genClick() {
-    const actions = ['register_click','play_click','bonus_view','game_click','scroll_50%','scroll_100%','exit_intent','tab_switch'];
-    const action = random(actions);
-    const meta = action==='game_click'?`game:${randInt(1,6)}`:action==='tab_switch'?`tab:${random(['slots','live','crash'])}`:'';
-    return {action, meta, time: new Date(Date.now()-randInt(0,86400000)).toISOString()};
-}
-
-// ==================== ХРАНИЛИЩЕ ====================
+// ==================== ДАННЫЕ ====================
 function getData() {
-    let raw = localStorage.getItem(STORAGE_KEY);
-    let data;
+    const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-        try { data = JSON.parse(raw); } catch(e) { data = null; }
+        try { return JSON.parse(raw); } catch(e) {}
     }
-    if (!data || !data.users) {
-        data = {
-            password: DEFAULT_PASSWORD,
-            links: { register_link: '#', play_link: '#' },
-            games: [
-                {id:1,name:"Gates of Olympus",icon:"🏛️",iconType:"emoji",rtp:"96.50",provider:"Pragmatic Play",category:"slots",is_active:true},
-                {id:2,name:"Sweet Bonanza",icon:"🍬",iconType:"emoji",rtp:"96.51",provider:"Pragmatic Play",category:"slots",is_active:true},
-                {id:3,name:"Book of Dead",icon:"📖",iconType:"emoji",rtp:"96.21",provider:"Play'n GO",category:"slots",is_active:true},
-                {id:4,name:"Aviator",icon:"✈️",iconType:"emoji",rtp:"97.00",provider:"Spribe",category:"crash",is_active:true},
-                {id:5,name:"Crazy Time",icon:"🎡",iconType:"emoji",rtp:"96.08",provider:"Evolution",category:"live",is_active:true},
-                {id:6,name:"Big Bamboo",icon:"🐼",iconType:"emoji",rtp:"96.13",provider:"Push Gaming",category:"slots",is_active:true}
-            ],
-            reviews: [
-                {id:1,name:"Мария К.",avatar:"👩‍🦰",avatarType:"emoji",stars:5,text:"Регистрировалась ради фриспинов, а в итоге подняла x1200 в Gates of Olympus. Вывела за 5 минут!",is_active:true},
-                {id:2,name:"Алексей В.",avatar:"👨",avatarType:"emoji",stars:5,text:"Медведь реально щедрый. Закинул 1000 рублей, играл в Aviator. Вывод пришел на карту мгновенно.",is_active:true},
-                {id:3,name:"Игорь L.",avatar:"🧔",avatarType:"emoji",stars:5,text:"Лучший саппорт! Помогли разобраться с вейджером за пару минут. Всё честно и прозрачно.",is_active:true}
-            ],
-            users: [],
-            events: []
-        };
-        // Генерируем 25 фейковых пользователей
-        for(let i=1;i<=25;i++) {
-            const u = genUser(i);
-            const clickCount = randInt(2,15);
-            for(let j=0;j<clickCount;j++) u.clicks.push(genClick());
-            data.users.push(u);
-        }
-        saveData(data);
-    }
-    return data;
+    // Пустая структура — без фейков!
+    const def = {
+        password: DEFAULT_PASSWORD,
+        links: { register_link: '#', play_link: '#' },
+        games: [
+            {id:1,name:"Gates of Olympus",icon:"🏛️",iconType:"emoji",rtp:"96.50",provider:"Pragmatic Play",category:"slots",is_active:true},
+            {id:2,name:"Sweet Bonanza",icon:"🍬",iconType:"emoji",rtp:"96.51",provider:"Pragmatic Play",category:"slots",is_active:true},
+            {id:3,name:"Book of Dead",icon:"📖",iconType:"emoji",rtp:"96.21",provider:"Play'n GO",category:"slots",is_active:true},
+            {id:4,name:"Aviator",icon:"✈️",iconType:"emoji",rtp:"97.00",provider:"Spribe",category:"crash",is_active:true},
+            {id:5,name:"Crazy Time",icon:"🎡",iconType:"emoji",rtp:"96.08",provider:"Evolution",category:"live",is_active:true},
+            {id:6,name:"Big Bamboo",icon:"🐼",iconType:"emoji",rtp:"96.13",provider:"Push Gaming",category:"slots",is_active:true}
+        ],
+        reviews: [
+            {id:1,name:"Мария К.",avatar:"👩‍🦰",avatarType:"emoji",stars:5,text:"Регистрировалась ради фриспинов, а в итоге подняла x1200 в Gates of Olympus. Вывела за 5 минут!",is_active:true},
+            {id:2,name:"Алексей В.",avatar:"👨",avatarType:"emoji",stars:5,text:"Медведь реально щедрый. Закинул 1000 рублей, играл в Aviator. Вывод пришел на карту мгновенно.",is_active:true},
+            {id:3,name:"Игорь L.",avatar:"🧔",avatarType:"emoji",stars:5,text:"Лучший саппорт! Помогли разобраться с вейджером за пару минут. Всё честно и прозрачно.",is_active:true}
+        ],
+        users: [],
+        events: []
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(def));
+    return def;
 }
 
 function saveData(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+
+// ==================== СБРОС СТАТИСТИКИ ====================
+function resetStats() {
+    if (!confirm('Удалить всю статистику посещений? Игры и отзывы останутся.')) return;
+    const d = getData();
+    d.users = [];
+    d.events = [];
+    saveData(d);
+    if (document.getElementById('tab-stats').style.display !== 'none') renderStats();
+    alert('✅ Статистика сброшена');
+}
 
 // ==================== АВТОРИЗАЦИЯ ====================
 function login() {
@@ -317,7 +268,7 @@ function switchTab(tab) {
     if(tab==='reviews') loadReviews();
 }
 
-// ==================== СТАТИСТИКА ====================
+// ==================== СТАТИСТИКА (ТОЛЬКО РЕАЛЬНЫЕ ДАННЫЕ) ====================
 let charts = {};
 
 function destroyCharts() {
@@ -327,96 +278,164 @@ function destroyCharts() {
 
 function renderStats() {
     const d = getData();
-    const users = d.users;
-    const allClicks = users.flatMap(u => u.clicks);
+    const users = d.users || [];
+    const events = d.events || [];
+    const allClicks = users.flatMap(u => u.clicks || []);
+
+    if (users.length === 0 && events.length === 0) {
+        document.getElementById('statsGrid').innerHTML = `
+            <div class="stat-box"><div class="stat-num">0</div><div class="stat-label">👥 Пользователей</div></div>
+            <div class="stat-box"><div class="stat-num">0</div><div class="stat-label">📅 Сегодня</div></div>
+            <div class="stat-box"><div class="stat-num">0</div><div class="stat-label">🖱 Кликов</div></div>
+            <div class="stat-box"><div class="stat-num">—</div><div class="stat-label">⏱ Среднее время</div></div>
+            <div class="stat-box"><div class="stat-num">0</div><div class="stat-label">🌍 Стран</div></div>
+            <div class="stat-box"><div class="stat-num">0</div><div class="stat-label">📱 Устройств</div></div>
+        `;
+        document.getElementById('usersTableWrap').innerHTML = '<div class="empty-state"><div class="icon">📊</div><p>Нет данных для отображения</p><p style="font-size:.8rem;margin-top:4px">Откройте лендинг на нескольких устройствах — статистика появится здесь</p></div>';
+        document.getElementById('eventsFeed').innerHTML = '<div class="empty-state"><p>Событий пока нет</p></div>';
+        destroyCharts();
+        return;
+    }
+
     const today = new Date().toDateString();
     const todayUsers = users.filter(u => new Date(u.lastActive).toDateString() === today).length;
-    const todayClicks = allClicks.filter(c => new Date(c.time).toDateString() === today).length;
-    const avgTime = users.length ? Math.round(users.reduce((s,u)=>s+u.timeOnSite,0)/users.length) : 0;
+    const todayEvents = events.filter(e => new Date(e.time).toDateString() === today).length;
+    const avgTime = users.length ? Math.round(users.reduce((s,u)=>s+(u.timeOnSite||0),0)/users.length) : 0;
+    const uniqueCountries = new Set(users.map(u=>u.country?.code).filter(Boolean)).size;
+    const uniqueDevices = new Set(users.map(u=>u.device).filter(Boolean)).size;
 
     document.getElementById('statsGrid').innerHTML = `
-        <div class="stat-box"><div class="stat-num">${users.length}</div><div class="stat-label">👥 Всего пользователей</div></div>
+        <div class="stat-box"><div class="stat-num">${users.length}</div><div class="stat-label">👥 Пользователей</div></div>
         <div class="stat-box"><div class="stat-num">${todayUsers}</div><div class="stat-label">📅 Сегодня</div></div>
         <div class="stat-box"><div class="stat-num">${allClicks.length}</div><div class="stat-label">🖱 Всего кликов</div></div>
-        <div class="stat-box"><div class="stat-num">${todayClicks}</div><div class="stat-label">🖱 Кликов сегодня</div></div>
-        <div class="stat-box"><div class="stat-num">${Math.floor(avgTime/60)}м ${avgTime%60}с</div><div class="stat-label">⏱ Среднее время</div></div>
-        <div class="stat-box"><div class="stat-num">${new Set(users.map(u=>u.country.code)).size}</div><div class="stat-label">🌍 Стран</div></div>
+        <div class="stat-box"><div class="stat-num">${todayEvents}</div><div class="stat-label">📋 Событий сегодня</div></div>
+        <div class="stat-box"><div class="stat-num">${avgTime ? Math.floor(avgTime/60)+'м '+avgTime%60+'с' : '—'}</div><div class="stat-label">⏱ Среднее время</div></div>
+        <div class="stat-box"><div class="stat-num">${uniqueCountries}</div><div class="stat-label">🌍 Стран</div></div>
     `;
 
     destroyCharts();
 
-    // График посещений по дням
+    // График: пользователи по дням
     const days = [];
     for(let i=6;i>=0;i--) {
         const date = new Date(Date.now()-i*86400000);
         const ds = date.toDateString();
-        days.push({label: date.toLocaleDateString('ru',{weekday:'short',day:'numeric'}), count: users.filter(u => new Date(u.firstVisit).toDateString() <= ds).length});
+        days.push({
+            label: date.toLocaleDateString('ru',{weekday:'short',day:'numeric'}),
+            count: users.filter(u => new Date(u.firstVisit).toDateString() <= ds).length
+        });
     }
-    charts.chartVisits = new Chart(document.getElementById('chartVisits'),{type:'line',data:{labels:days.map(d=>d.label),datasets:[{label:'Посетители',data:days.map(d=>d.count),borderColor:'#39FF14',backgroundColor:'rgba(57,255,20,0.1)',fill:true,tension:.4,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9BA3B5'}},y:{ticks:{color:'#9BA3B5'},beginAtZero:true}}}});
+    if(document.getElementById('chartVisits')) {
+        charts.chartVisits = new Chart(document.getElementById('chartVisits'),{
+            type:'line',data:{labels:days.map(d=>d.label),datasets:[{label:'Пользователи',data:days.map(d=>d.count),borderColor:'#39FF14',backgroundColor:'rgba(57,255,20,0.1)',fill:true,tension:.4,borderWidth:2}]},
+            options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9BA3B5'}},y:{ticks:{color:'#9BA3B5'},beginAtZero:true}}}
+        });
+    }
 
-    // Устройства
+    // График: устройства
     const devCounts = {};
-    users.forEach(u => { const d = u.device; devCounts[d] = (devCounts[d]||0)+1; });
-    charts.chartDevices = new Chart(document.getElementById('chartDevices'),{type:'doughnut',data:{labels:Object.keys(devCounts),datasets:[{data:Object.values(devCounts),backgroundColor:['#39FF14','#FFD700','#4F46E5'],borderColor:'#0B0E17'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#9BA3B5',fontSize:10}}}}});
+    users.forEach(u => { const dev = u.device||'Неизвестно'; devCounts[dev] = (devCounts[dev]||0)+1; });
+    if(document.getElementById('chartDevices')) {
+        charts.chartDevices = new Chart(document.getElementById('chartDevices'),{
+            type:'doughnut',data:{labels:Object.keys(devCounts),datasets:[{data:Object.values(devCounts),backgroundColor:['#39FF14','#FFD700','#4F46E5','#ff6b6b'],borderColor:'#0B0E17'}]},
+            options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#9BA3B5',fontSize:10}}}}
+        });
+    }
 
-    // Клики по часам
+    // График: события по часам
     const hours = Array(24).fill(0);
-    allClicks.forEach(c => hours[new Date(c.time).getHours()]++);
-    charts.chartClicks = new Chart(document.getElementById('chartClicks'),{type:'bar',data:{labels:Array.from({length:24},(_,i)=>`${i}:00`),datasets:[{label:'Клики',data:hours,backgroundColor:'rgba(57,255,20,0.5)',borderColor:'#39FF14',borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9BA3B5',maxTicksLimit:12}},y:{ticks:{color:'#9BA3B5'},beginAtZero:true}}}});
+    events.forEach(e => { if(e.time) hours[new Date(e.time).getHours()]++; });
+    allClicks.forEach(c => { if(c.time) hours[new Date(c.time).getHours()]++; });
+    if(document.getElementById('chartClicks')) {
+        charts.chartClicks = new Chart(document.getElementById('chartClicks'),{
+            type:'bar',data:{labels:Array.from({length:24},(_,i)=>`${i}:00`),datasets:[{label:'Активность',data:hours,backgroundColor:'rgba(57,255,20,0.4)',borderColor:'#39FF14',borderWidth:1,borderRadius:4}]},
+            options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9BA3B5',maxTicksLimit:12}},y:{ticks:{color:'#9BA3B5'},beginAtZero:true}}}
+        });
+    }
 
-    // Гео
+    // График: гео
     const geoCounts = {};
-    users.forEach(u => { const c = u.country.flag+' '+u.country.code; geoCounts[c] = (geoCounts[c]||0)+1; });
-    charts.chartGeo = new Chart(document.getElementById('chartGeo'),{type:'bar',data:{labels:Object.keys(geoCounts),datasets:[{label:'Пользователи',data:Object.values(geoCounts),backgroundColor:['#39FF14','#FFD700','#4F46E5','#ff6b6b','#00d2ff','#ff8c00','#7c3aed','#ff69b4','#00ff88','#ff4444'],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9BA3B5'},beginAtZero:true},y:{ticks:{color:'#9BA3B5'}}}}});
+    users.forEach(u => {
+        if(u.country?.code) {
+            const key = (u.country.flag||'')+' '+u.country.code;
+            geoCounts[key] = (geoCounts[key]||0)+1;
+        }
+    });
+    if(document.getElementById('chartGeo') && Object.keys(geoCounts).length > 0) {
+        charts.chartGeo = new Chart(document.getElementById('chartGeo'),{
+            type:'bar',data:{labels:Object.keys(geoCounts),datasets:[{label:'Пользователи',data:Object.values(geoCounts),backgroundColor:'rgba(57,255,20,0.6)',borderRadius:4}]},
+            options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9BA3B5'},beginAtZero:true},y:{ticks:{color:'#9BA3B5'}}}}
+        });
+    }
 
-    // Время на сайте
+    // График: время на сайте
     const timeBuckets = {'<1мин':0,'1-5мин':0,'5-15мин':0,'15-30мин':0,'30+ мин':0};
     users.forEach(u => {
-        if(u.timeOnSite<60) timeBuckets['<1мин']++;
-        else if(u.timeOnSite<300) timeBuckets['1-5мин']++;
-        else if(u.timeOnSite<900) timeBuckets['5-15мин']++;
-        else if(u.timeOnSite<1800) timeBuckets['15-30мин']++;
+        const t = u.timeOnSite||0;
+        if(t<60) timeBuckets['<1мин']++;
+        else if(t<300) timeBuckets['1-5мин']++;
+        else if(t<900) timeBuckets['5-15мин']++;
+        else if(t<1800) timeBuckets['15-30мин']++;
         else timeBuckets['30+ мин']++;
     });
-    charts.chartTimeOnSite = new Chart(document.getElementById('chartTimeOnSite'),{type:'pie',data:{labels:Object.keys(timeBuckets),datasets:[{data:Object.values(timeBuckets),backgroundColor:['#39FF14','#FFD700','#4F46E5','#ff6b6b','#00d2ff']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#9BA3B5',fontSize:9}}}}});
+    if(document.getElementById('chartTimeOnSite')) {
+        charts.chartTimeOnSite = new Chart(document.getElementById('chartTimeOnSite'),{
+            type:'pie',data:{labels:Object.keys(timeBuckets),datasets:[{data:Object.values(timeBuckets),backgroundColor:['#39FF14','#FFD700','#4F46E5','#ff6b6b','#00d2ff']}]},
+            options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#9BA3B5',fontSize:9}}}}
+        });
+    }
 
     // Таблица пользователей
-    document.getElementById('usersTable').innerHTML = users.map(u => `
-        <tr class="user-row" onclick="showUserDetail(${u.id})">
-            <td><strong>${u.nick}</strong></td>
-            <td><span class="geo-flag">${u.country.flag}</span>${u.country.code}</td>
-            <td>${u.device}</td>
-            <td>${u.clicks.length}</td>
-            <td>${Math.floor(u.timeOnSite/60)}м ${u.timeOnSite%60}с</td>
-            <td>${new Date(u.lastActive).toLocaleString('ru')}</td>
-        </tr>`).join('');
+    const usersSorted = [...users].sort((a,b) => new Date(b.lastActive||0) - new Date(a.lastActive||0));
+    document.getElementById('usersTableWrap').innerHTML = `
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Пользователь</th><th>Страна</th><th>Устройство</th><th>Кликов</th><th>Время</th><th>Последняя активность</th></tr></thead>
+                <tbody>${usersSorted.map(u => `
+                    <tr class="user-row" onclick="showUserDetail('${u.id}')">
+                        <td><strong>${u.nick||'User'}</strong></td>
+                        <td><span class="geo-flag">${u.country?.flag||'🌐'}</span>${u.country?.code||'—'}</td>
+                        <td>${u.device||'—'}</td>
+                        <td>${(u.clicks||[]).length}</td>
+                        <td>${Math.floor((u.timeOnSite||0)/60)}м ${(u.timeOnSite||0)%60}с</td>
+                        <td>${u.lastActive ? new Date(u.lastActive).toLocaleString('ru') : '—'}</td>
+                    </tr>`).join('')}</tbody>
+            </table>
+        </div>`;
 
     // Лента событий
-    const sortedEvents = allClicks.sort((a,b)=>new Date(b.time)-new Date(a.time)).slice(0,30);
-    document.getElementById('eventsFeed').innerHTML = sortedEvents.map(e => `
-        <div class="item-row"><span style="color:#6B7280;font-size:.75rem">${new Date(e.time).toLocaleString('ru')}</span> <span class="badge badge-on">${e.action}</span> <span style="color:#9BA3B5;font-size:.8rem">${e.meta}</span></div>`).join('');
+    const allEvents = [...events].sort((a,b) => new Date(b.time||0) - new Date(a.time||0)).slice(0, 30);
+    document.getElementById('eventsFeed').innerHTML = allEvents.length > 0 ? allEvents.map(e => `
+        <div class="item-row">
+            <span style="color:#6B7280;font-size:.75rem">${e.time ? new Date(e.time).toLocaleString('ru') : '—'}</span>
+            <span class="badge badge-on">${e.event||'unknown'}</span>
+            <span style="color:#9BA3B5;font-size:.8rem">${e.meta||''}</span>
+        </div>`).join('') : '<div class="empty-state"><p>Событий пока нет</p></div>';
 }
 
 // ==================== МОДАЛКА ПОЛЬЗОВАТЕЛЯ ====================
 function showUserDetail(id) {
     const u = getData().users.find(x => x.id === id);
     if (!u) return;
-    document.getElementById('userModalTitle').textContent = `👤 ${u.nick} — детальная статистика`;
+    document.getElementById('userModalTitle').textContent = `👤 ${u.nick||'User'} — детальная статистика`;
     document.getElementById('userModalContent').innerHTML = `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
-            <div><strong>🌍 Страна:</strong> ${u.country.flag} ${u.country.name}, ${u.city}</div>
-            <div><strong>📱 Устройство:</strong> ${u.device}</div>
-            <div><strong>💻 ОС:</strong> ${u.os}</div>
-            <div><strong>🌐 Браузер:</strong> ${u.browser}</div>
-            <div><strong>📐 Экран:</strong> ${u.screen}</div>
-            <div><strong>🔢 IP:</strong> ${u.ip}</div>
-            <div><strong>🕐 Первый визит:</strong> ${new Date(u.firstVisit).toLocaleString('ru')}</div>
-            <div><strong>🕐 Последняя активность:</strong> ${new Date(u.lastActive).toLocaleString('ru')}</div>
-            <div><strong>⏱ Время на сайте:</strong> ${Math.floor(u.timeOnSite/60)}м ${u.timeOnSite%60}с</div>
-            <div><strong>🖱 Всего кликов:</strong> ${u.clicks.length}</div>
+            <div><strong>🌍 Страна:</strong> ${u.country?.flag||'🌐'} ${u.country?.name||'Неизвестно'}${u.city ? ', '+u.city : ''}</div>
+            <div><strong>📱 Устройство:</strong> ${u.device||'—'}</div>
+            <div><strong>💻 ОС:</strong> ${u.os||'—'}</div>
+            <div><strong>🌐 Браузер:</strong> ${u.browser||'—'}</div>
+            <div><strong>📐 Экран:</strong> ${u.screen||'—'}</div>
+            <div><strong>🔢 IP:</strong> ${u.ip||'—'}</div>
+            <div><strong>🕐 Первый визит:</strong> ${u.firstVisit ? new Date(u.firstVisit).toLocaleString('ru') : '—'}</div>
+            <div><strong>🕐 Активность:</strong> ${u.lastActive ? new Date(u.lastActive).toLocaleString('ru') : '—'}</div>
+            <div><strong>⏱ Время:</strong> ${Math.floor((u.timeOnSite||0)/60)}м ${(u.timeOnSite||0)%60}с</div>
+            <div><strong>🖱 Кликов:</strong> ${(u.clicks||[]).length}</div>
         </div>
         <h4 style="margin-bottom:8px">📋 История кликов:</h4>
-        ${u.clicks.sort((a,b)=>new Date(b.time)-new Date(a.time)).map(c => `<div style="padding:6px 0;border-bottom:1px solid #1E2538;font-size:.85rem">${new Date(c.time).toLocaleString('ru')} — <span style="color:#39FF14">${c.action}</span> ${c.meta}</div>`).join('')}
+        ${(u.clicks||[]).sort((a,b)=>new Date(b.time||0)-new Date(a.time||0)).map(c => `
+            <div style="padding:6px 0;border-bottom:1px solid #1E2538;font-size:.85rem">
+                ${c.time ? new Date(c.time).toLocaleString('ru') : '—'} — <span style="color:#39FF14">${c.action||'unknown'}</span> ${c.meta||''}
+            </div>`).join('') || '<p style="color:#6B7280">Нет данных</p>'}
     `;
     document.getElementById('userModal').classList.add('active');
 }
@@ -453,7 +472,10 @@ function updateReviewEmojiPreview(){const emoji=document.getElementById('reviewA
 function fileToBase64(file){return new Promise((resolve)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.readAsDataURL(file)})}
 
 // ==================== ИНИТ ====================
-function init(){getData();if(sessionStorage.getItem('admin_auth')==='1')showAdmin()}
+function init(){
+    getData();
+    if(sessionStorage.getItem('admin_auth')==='1') showAdmin();
+}
 init();
 </script>
 </body>
