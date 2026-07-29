@@ -2,9 +2,9 @@
     'use strict';
 
     const CONFIG = {
-    apiUrl: null,  // не используем API
-    trackUrl: null, // не используем API
-    useLocalStorage: true, // ВКЛЮЧАЕМ РЕЖИМ localStorage
+        apiUrl: null,
+        trackUrl: null,
+        useLocalStorage: true,
         defaultLinks: { register: '#', play: '#' },
         bonusEndTime: new Date().getTime() + (5 * 3600 + 42 * 60 + 18) * 1000,
     };
@@ -46,12 +46,7 @@
         for (let i = 0; i < count; i++) {
             const p = document.createElement('div');
             p.classList.add('particle');
-            p.style.cssText = `
-                width:${Math.random()*4+2}px;height:${Math.random()*4+2}px;
-                left:${Math.random()*100}%;top:${Math.random()*100}%;
-                animation-delay:${Math.random()*6}s;animation-duration:${Math.random()*6+4}s;
-                opacity:${Math.random()*0.3+0.1};
-            `;
+            p.style.cssText = `width:${Math.random()*4+2}px;height:${Math.random()*4+2}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation-delay:${Math.random()*6}s;animation-duration:${Math.random()*6+4}s;opacity:${Math.random()*0.3+0.1};`;
             DOM.particles.appendChild(p);
         }
     }
@@ -94,24 +89,22 @@
         update(); setInterval(update, 1000);
     }
 
-async function loadDynamicContent() {
-    if (CONFIG.useLocalStorage) {
-        // Берём данные из localStorage (синхронизация с админкой)
-        const raw = localStorage.getItem('luckybear_admin');
-        if (raw) {
-            try {
-                const adminData = JSON.parse(raw);
-                updateLinks(adminData.links);
-                renderGames(adminData.games.filter(g => g.is_active));
-                renderReviews(adminData.reviews.filter(r => r.is_active));
-                return;
-            } catch(e) {}
+    async function loadDynamicContent() {
+        if (CONFIG.useLocalStorage) {
+            const raw = localStorage.getItem('luckybear_admin');
+            if (raw) {
+                try {
+                    const adminData = JSON.parse(raw);
+                    updateLinks(adminData.links);
+                    renderGames(adminData.games.filter(g => g.is_active));
+                    renderReviews(adminData.reviews.filter(r => r.is_active));
+                    return;
+                } catch(e) {}
+            }
         }
+        renderDefaultGames();
+        renderDefaultReviews();
     }
-    // Если localStorage пуст — грузим дефолтные
-    renderDefaultGames();
-    renderDefaultReviews();
-}
 
     function updateLinks(links) {
         if (!links) return;
@@ -119,14 +112,29 @@ async function loadDynamicContent() {
         document.querySelectorAll('[data-play-link]').forEach(l => l.href = links.play_link || CONFIG.defaultLinks.play);
     }
 
+    // ============ РЕНДЕР ИГР (с поддержкой фото) ============
     function renderGames(games) {
         if (!DOM.gamesGrid) return;
         if (!games || !games.length) { renderDefaultGames(); return; }
-        DOM.gamesGrid.innerHTML = games.map(g => `
-            <div class="game-card" data-game-id="${g.id}" data-tab="${g.category}">
-                <div class="game-image"><span class="game-img-placeholder">${g.icon||'🎰'}</span><div class="game-play-btn"><i class="fas fa-play"></i></div></div>
-                <div class="game-info"><h3 class="game-name">${g.name}</h3><div class="game-meta"><span class="game-rtp">RTP ${g.rtp}%</span><span>${g.provider}</span></div></div>
-            </div>`).join('');
+        DOM.gamesGrid.innerHTML = games.map(g => {
+            let iconHTML;
+            if (g.iconType === 'image' && g.icon && g.icon.startsWith('data:image')) {
+                iconHTML = `<img src="${g.icon}" alt="${g.name}" style="width:100%;height:100%;object-fit:cover;border-radius:12px">`;
+            } else {
+                iconHTML = `<span class="game-img-placeholder">${g.icon || '🎰'}</span>`;
+            }
+            return `
+                <div class="game-card" data-game-id="${g.id}" data-tab="${g.category}">
+                    <div class="game-image">${iconHTML}<div class="game-play-btn"><i class="fas fa-play"></i></div></div>
+                    <div class="game-info">
+                        <h3 class="game-name">${g.name}</h3>
+                        <div class="game-meta">
+                            <span class="game-rtp">RTP ${g.rtp}%</span>
+                            <span>${g.provider}</span>
+                        </div>
+                    </div>
+                </div>`;
+        }).join('');
         DOM.gamesGrid.querySelectorAll('.game-card').forEach(c => c.addEventListener('click', function() {
             const link = document.querySelector('[data-play-link]');
             if (link?.href) { trackEvent('game_click', {game: this.dataset.gameId}); window.open(link.href, '_blank'); }
@@ -135,30 +143,45 @@ async function loadDynamicContent() {
 
     function renderDefaultGames() {
         renderGames([
-            {id:1,name:"Gates of Olympus",rtp:"96.50",provider:"Pragmatic Play",icon:"🏛️",category:"slots"},
-            {id:2,name:"Sweet Bonanza",rtp:"96.51",provider:"Pragmatic Play",icon:"🍬",category:"slots"},
-            {id:3,name:"Book of Dead",rtp:"96.21",provider:"Play'n GO",icon:"📖",category:"slots"},
-            {id:4,name:"Aviator",rtp:"97.00",provider:"Spribe",icon:"✈️",category:"crash"},
-            {id:5,name:"Crazy Time",rtp:"96.08",provider:"Evolution",icon:"🎡",category:"live"},
-            {id:6,name:"Big Bamboo",rtp:"96.13",provider:"Push Gaming",icon:"🐼",category:"slots"},
+            {id:1,name:"Gates of Olympus",icon:"🏛️",iconType:"emoji",rtp:"96.50",provider:"Pragmatic Play",category:"slots"},
+            {id:2,name:"Sweet Bonanza",icon:"🍬",iconType:"emoji",rtp:"96.51",provider:"Pragmatic Play",category:"slots"},
+            {id:3,name:"Book of Dead",icon:"📖",iconType:"emoji",rtp:"96.21",provider:"Play'n GO",category:"slots"},
+            {id:4,name:"Aviator",icon:"✈️",iconType:"emoji",rtp:"97.00",provider:"Spribe",category:"crash"},
+            {id:5,name:"Crazy Time",icon:"🎡",iconType:"emoji",rtp:"96.08",provider:"Evolution",category:"live"},
+            {id:6,name:"Big Bamboo",icon:"🐼",iconType:"emoji",rtp:"96.13",provider:"Push Gaming",category:"slots"},
         ]);
     }
 
+    // ============ РЕНДЕР ОТЗЫВОВ (с поддержкой фото) ============
     function renderReviews(reviews) {
         if (!DOM.reviewsGrid) return;
         if (!reviews || !reviews.length) { renderDefaultReviews(); return; }
-        DOM.reviewsGrid.innerHTML = reviews.map(r => `
-            <div class="review-card">
-                <div class="review-header"><div class="review-avatar">${r.avatar||'👤'}</div><div><div class="review-name">${r.name}</div><div class="review-stars">${'⭐'.repeat(r.stars||5)}</div></div></div>
-                <p class="review-text">${r.text}</p>
-            </div>`).join('');
+        DOM.reviewsGrid.innerHTML = reviews.map(r => {
+            let avatarHTML;
+            if (r.avatarType === 'image' && r.avatar && r.avatar.startsWith('data:image')) {
+                avatarHTML = `<img src="${r.avatar}" alt="${r.name}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+            } else {
+                avatarHTML = r.avatar || '👤';
+            }
+            return `
+                <div class="review-card">
+                    <div class="review-header">
+                        <div class="review-avatar" style="overflow:hidden">${avatarHTML}</div>
+                        <div>
+                            <div class="review-name">${r.name}</div>
+                            <div class="review-stars">${'⭐'.repeat(r.stars || 5)}</div>
+                        </div>
+                    </div>
+                    <p class="review-text">${r.text}</p>
+                </div>`;
+        }).join('');
     }
 
     function renderDefaultReviews() {
         renderReviews([
-            {name:"Мария К.",avatar:"👩‍🦰",stars:5,text:"Регистрировалась ради фриспинов, а в итоге подняла x1200 в Gates of Olympus. Вывела за 5 минут!"},
-            {name:"Алексей В.",avatar:"👨",stars:5,text:"Медведь реально щедрый. Закинул 1000 рублей, играл в Aviator. Вывод пришел на карту мгновенно."},
-            {name:"Игорь L.",avatar:"🧔",stars:5,text:"Лучший саппорт! Помогли разобраться с вейджером за пару минут. Все честно и прозрачно."},
+            {name:"Мария К.",avatar:"👩‍🦰",avatarType:"emoji",stars:5,text:"Регистрировалась ради фриспинов, а в итоге подняла x1200 в Gates of Olympus. Вывела за 5 минут!"},
+            {name:"Алексей В.",avatar:"👨",avatarType:"emoji",stars:5,text:"Медведь реально щедрый. Закинул 1000 рублей, играл в Aviator. Вывод пришел на карту мгновенно."},
+            {name:"Игорь L.",avatar:"🧔",avatarType:"emoji",stars:5,text:"Лучший саппорт! Помогли разобраться с вейджером за пару минут. Всё честно и прозрачно."},
         ]);
     }
 
@@ -184,13 +207,9 @@ async function loadDynamicContent() {
 
     function initModals() {
         if (!DOM.pageModal) return;
-        document.querySelectorAll('.page-link').forEach(l => l.addEventListener('click', async function(e) {
+        document.querySelectorAll('.page-link').forEach(l => l.addEventListener('click', function(e) {
             e.preventDefault();
-            try {
-                const r = await fetch(`${CONFIG.apiUrl}?page=${this.dataset.page}`);
-                const d = await r.json();
-                if (DOM.modalBody) DOM.modalBody.innerHTML = d.success && d.content ? d.content : '<p>Страница недоступна</p>';
-            } catch(e) { if (DOM.modalBody) DOM.modalBody.innerHTML = '<p>Ошибка загрузки</p>'; }
+            if (DOM.modalBody) DOM.modalBody.innerHTML = '<h2>'+this.textContent+'</h2><p>Страница в разработке.</p>';
             DOM.pageModal.classList.add('active');
             document.body.style.overflow = 'hidden';
         }));
@@ -208,24 +227,20 @@ async function loadDynamicContent() {
         }));
     }
 
-function trackEvent(event, data = {}) {
-    // Сохраняем в localStorage для статистики админки
-    if (CONFIG.useLocalStorage) {
-        const raw = localStorage.getItem('luckybear_admin');
-        if (raw) {
-            try {
-                const adminData = JSON.parse(raw);
-                adminData.events.unshift({
-                    event: event,
-                    meta: JSON.stringify(data),
-                    time: new Date().toLocaleString('ru')
-                });
-                if (adminData.events.length > 100) adminData.events = adminData.events.slice(0, 100);
-                localStorage.setItem('luckybear_admin', JSON.stringify(adminData));
-            } catch(e) {}
+    function trackEvent(event, data = {}) {
+        if (CONFIG.useLocalStorage) {
+            const raw = localStorage.getItem('luckybear_admin');
+            if (raw) {
+                try {
+                    const adminData = JSON.parse(raw);
+                    adminData.events.unshift({event: event, meta: JSON.stringify(data), time: new Date().toLocaleString('ru')});
+                    if (adminData.events.length > 100) adminData.events = adminData.events.slice(0, 100);
+                    localStorage.setItem('luckybear_admin', JSON.stringify(adminData));
+                } catch(e) {}
+            }
         }
     }
-}
+
     function trackPageView() {
         trackEvent('page_view', {page:'home'});
         document.querySelectorAll('[data-reg-link],[data-play-link]').forEach(b => b.addEventListener('click', function() {
