@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /admin.html
+Disallow: /api/
+Disallow: /database/
+Disallow: /*.php$
+Disallow: /*.sql$
+
+User-agent: Yandex
+Allow: /
+Disallow: /admin/
+Disallow: /admin.html
+Disallow: /api/
+Disallow: /database/
+Clean-param: utm_source&utm_medium&utm_campaign&utm_content&utm_term&fbclid&gclid
+
+Host: https://luckybear-casino-online.vercel.app
+Sitemap: https://luckybear-casino-online.vercel.app/sitemap.xml
