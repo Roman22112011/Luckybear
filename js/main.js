@@ -208,12 +208,24 @@ async function loadDynamicContent() {
         }));
     }
 
-    function trackEvent(event, data = {}) {
-        try {
-            fetch(CONFIG.trackUrl, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event,data,url:window.location.href,timestamp:new Date().toISOString()})});
-        } catch(e) {}
+function trackEvent(event, data = {}) {
+    // Сохраняем в localStorage для статистики админки
+    if (CONFIG.useLocalStorage) {
+        const raw = localStorage.getItem('luckybear_admin');
+        if (raw) {
+            try {
+                const adminData = JSON.parse(raw);
+                adminData.events.unshift({
+                    event: event,
+                    meta: JSON.stringify(data),
+                    time: new Date().toLocaleString('ru')
+                });
+                if (adminData.events.length > 100) adminData.events = adminData.events.slice(0, 100);
+                localStorage.setItem('luckybear_admin', JSON.stringify(adminData));
+            } catch(e) {}
+        }
     }
-
+}
     function trackPageView() {
         trackEvent('page_view', {page:'home'});
         document.querySelectorAll('[data-reg-link],[data-play-link]').forEach(b => b.addEventListener('click', function() {
