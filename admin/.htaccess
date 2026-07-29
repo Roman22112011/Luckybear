@@ -1,0 +1,3 @@
+AuthType Basic
+AuthName "Admin Area"
+# Require valid-user (отключено, используется сессионная авторизация)
