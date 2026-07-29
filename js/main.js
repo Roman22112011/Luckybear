@@ -94,17 +94,24 @@
         update(); setInterval(update, 1000);
     }
 
-    async function loadDynamicContent() {
-        try {
-            const r = await fetch(CONFIG.apiUrl);
-            const d = await r.json();
-            if (d.success) {
-                updateLinks(d.links);
-                renderGames(d.games);
-                renderReviews(d.reviews);
-            }
-        } catch(e) { renderDefaultGames(); renderDefaultReviews(); }
+async function loadDynamicContent() {
+    if (CONFIG.useLocalStorage) {
+        // Берём данные из localStorage (синхронизация с админкой)
+        const raw = localStorage.getItem('luckybear_admin');
+        if (raw) {
+            try {
+                const adminData = JSON.parse(raw);
+                updateLinks(adminData.links);
+                renderGames(adminData.games.filter(g => g.is_active));
+                renderReviews(adminData.reviews.filter(r => r.is_active));
+                return;
+            } catch(e) {}
+        }
     }
+    // Если localStorage пуст — грузим дефолтные
+    renderDefaultGames();
+    renderDefaultReviews();
+}
 
     function updateLinks(links) {
         if (!links) return;
