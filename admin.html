@@ -3,95 +3,287 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LuckyBear Admin</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>LuckyBear Admin — Панель управления</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        :root {
+            --bg: #0B0E17;
+            --surface: #111624;
+            --card: #161B29;
+            --border: #1E2538;
+            --green: #39FF14;
+            --gold: #FFD700;
+            --text: #FFFFFF;
+            --muted: #9BA3B5;
+            --dim: #6B7280;
+            --red: #ff4444;
+            --blue: #4F46E5;
+            --radius: 16px;
+            --radius-sm: 10px;
+        }
+
         *{margin:0;padding:0;box-sizing:border-box}
-        body{font-family:'Inter',sans-serif;background:#0B0E17;color:#fff;min-height:100vh;padding:16px}
-        .container{max-width:1100px;margin:0 auto}
-        .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px}
-        .logo{font-size:1.5rem;font-weight:700;color:#39FF14}
-        .tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
-        .tab{padding:10px 20px;background:#161B29;border:1px solid #1E2538;border-radius:50px;color:#9BA3B5;cursor:pointer;font-size:.85rem;transition:all .3s}
-        .tab.active{background:linear-gradient(135deg,#39FF14,#00F0FF);color:#0B0E17;border-color:transparent;font-weight:600}
-        .card{background:#161B29;border:1px solid #1E2538;border-radius:16px;padding:20px;margin-bottom:16px}
-        .card h3{margin-bottom:16px;font-size:1.1rem}
-        .form-group{margin-bottom:14px}
-        .form-group label{display:block;color:#9BA3B5;margin-bottom:4px;font-size:.85rem}
-        .form-group input,.form-group textarea,.form-group select{width:100%;padding:10px 14px;background:#0B0E17;border:1px solid #1E2538;border-radius:10px;color:#fff;font-size:.9rem}
-        .form-group textarea{resize:vertical;min-height:60px}
-        .btn{padding:10px 24px;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-size:.9rem;transition:all .3s}
-        .btn-primary{background:linear-gradient(135deg,#39FF14,#00F0FF);color:#0B0E17}
-        .btn-primary:hover{transform:translateY(-2px)}
-        .btn-danger{background:#ff4444;color:#fff;margin-left:8px}
-        .btn-outline{background:transparent;border:1px solid #1E2538;color:#9BA3B5}
-        .btn-outline:hover{border-color:#39FF14;color:#fff}
-        .btn-sm{padding:5px 12px;font-size:.75rem}
-        .item-row{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid #1E2538;gap:12px;flex-wrap:wrap}
-        .item-left{display:flex;align-items:center;gap:12px;flex:1;min-width:200px}
-        .item-avatar{width:48px;height:48px;border-radius:50%;object-fit:cover;background:#1E2538;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.5rem;overflow:hidden}
-        .item-avatar img{width:100%;height:100%;object-fit:cover}
-        .item-info{flex:1}.item-name{font-weight:600}.item-meta{color:#9BA3B5;font-size:.8rem}
-        .item-actions{display:flex;gap:8px;flex-shrink:0}
-        .badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:.7rem;font-weight:600}
-        .badge-on{background:rgba(57,255,20,0.2);color:#39FF14}
-        .badge-off{background:rgba(255,68,68,0.2);color:#ff4444}
-        .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
-        .stat-box{background:linear-gradient(135deg,#161B29,#1a1040);border:1px solid #1E2538;border-radius:12px;padding:16px;text-align:center}
-        .stat-num{font-size:2rem;font-weight:700;color:#39FF14}
-        .stat-label{color:#9BA3B5;font-size:.75rem;margin-top:4px}
-        .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
-        .chart-box{background:#161B29;border:1px solid #1E2538;border-radius:12px;padding:16px;position:relative;height:280px}
-        .chart-box.full{grid-column:1/-1;height:300px}
-        .login-box{max-width:380px;margin:80px auto;text-align:center}
-        .login-box input{width:100%;padding:14px;background:#0B0E17;border:1px solid #1E2538;border-radius:10px;color:#fff;margin-bottom:12px;font-size:1rem;text-align:center}
-        .error{color:#ff4444;margin-bottom:12px;font-size:.85rem}
-        .img-preview{width:80px;height:80px;border-radius:50%;object-fit:cover;margin:8px 0;background:#1E2538;display:flex;align-items:center;justify-content:center;font-size:2rem;overflow:hidden}
+        body{
+            font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+            background:var(--bg);
+            background-image:
+                radial-gradient(ellipse at 20% 0%, rgba(57,255,20,0.03) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(79,70,229,0.05) 0%, transparent 50%);
+            color:var(--text);
+            min-height:100vh;
+            padding:16px;
+            line-height:1.5;
+        }
+        .container{max-width:1200px;margin:0 auto}
+
+        /* Header */
+        .header{
+            display:flex;justify-content:space-between;align-items:center;
+            margin-bottom:28px;flex-wrap:wrap;gap:16px;
+            background:var(--card);border:1px solid var(--border);
+            border-radius:var(--radius);padding:20px 24px;
+        }
+        .header-left{display:flex;align-items:center;gap:14px}
+        .logo-icon{font-size:2.2rem;animation:float 3s ease-in-out infinite}
+        .logo-text{font-size:1.4rem;font-weight:800;letter-spacing:-0.5px}
+        .logo-accent{color:var(--green)}
+        .header-actions{display:flex;gap:10px;flex-wrap:wrap}
+        .live-dot{width:10px;height:10px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;display:inline-block;margin-right:6px;vertical-align:middle}
+
+        @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+        @keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(57,255,20,0.4)}50%{opacity:0.7;box-shadow:0 0 0 8px rgba(57,255,20,0)}}
+
+        /* Tabs */
+        .tabs{display:flex;gap:6px;margin-bottom:24px;flex-wrap:wrap;background:var(--card);border:1px solid var(--border);border-radius:50px;padding:6px;width:fit-content}
+        .tab{
+            padding:10px 22px;border:none;border-radius:50px;color:var(--muted);
+            cursor:pointer;font-size:.85rem;font-weight:500;background:transparent;
+            transition:all .3s;white-space:nowrap;font-family:inherit;
+            display:flex;align-items:center;gap:6px;
+        }
+        .tab:hover{color:var(--text);background:rgba(255,255,255,0.03)}
+        .tab.active{
+            background:linear-gradient(135deg,var(--green),#00F0FF);
+            color:#0B0E17;font-weight:700;box-shadow:0 4px 20px rgba(57,255,20,0.3);
+        }
+
+        /* Cards */
+        .card{
+            background:var(--card);border:1px solid var(--border);
+            border-radius:var(--radius);padding:24px;margin-bottom:20px;
+            transition:border-color .3s;
+        }
+        .card:hover{border-color:rgba(57,255,20,0.2)}
+        .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+        .card-title{font-size:1.1rem;font-weight:700;display:flex;align-items:center;gap:10px}
+        .card-subtitle{font-size:.8rem;color:var(--dim);font-weight:400;margin-top:2px}
+        .card-badge{font-size:.7rem;padding:4px 12px;border-radius:20px;font-weight:600;background:rgba(57,255,20,0.1);color:var(--green);border:1px solid rgba(57,255,20,0.2)}
+
+        /* Stats Grid */
+        .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:24px}
+        .stat-card{
+            background:linear-gradient(145deg,var(--card),#1a1040);
+            border:1px solid var(--border);border-radius:var(--radius);padding:20px;
+            position:relative;overflow:hidden;transition:all .3s;
+        }
+        .stat-card:hover{transform:translateY(-2px);border-color:rgba(57,255,20,0.3);box-shadow:0 8px 30px rgba(57,255,20,0.08)}
+        .stat-card::after{content:'';position:absolute;top:0;right:0;width:80px;height:80px;background:radial-gradient(circle,rgba(57,255,20,0.05) 0%,transparent 70%);border-radius:50%;pointer-events:none}
+        .stat-icon{font-size:1.5rem;margin-bottom:10px;opacity:.8}
+        .stat-value{font-size:2.2rem;font-weight:900;letter-spacing:-1px;line-height:1}
+        .stat-value.green{color:var(--green)}
+        .stat-value.gold{color:var(--gold)}
+        .stat-label{color:var(--muted);font-size:.78rem;margin-top:6px;font-weight:500}
+        .stat-trend{font-size:.7rem;margin-top:4px;font-weight:600}
+        .stat-trend.up{color:var(--green)}.stat-trend.down{color:var(--red)}
+
+        /* Charts */
+        .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px}
+        .chart-card{
+            background:var(--card);border:1px solid var(--border);
+            border-radius:var(--radius);padding:20px;position:relative;
+        }
+        .chart-card.full{grid-column:1/-1}
+        .chart-wrap{position:relative;height:280px}
+        .chart-wrap.tall{height:320px}
+        .chart-desc{font-size:.75rem;color:var(--dim);margin-top:10px;line-height:1.5;padding-top:10px;border-top:1px solid var(--border)}
+
+        /* Tables */
+        .table-wrap{max-height:420px;overflow-y:auto;border-radius:var(--radius-sm)}
+        .table-wrap::-webkit-scrollbar{width:4px}
+        .table-wrap::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}
+        table{width:100%;border-collapse:collapse;font-size:.84rem}
+        th,td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--border)}
+        th{color:var(--dim);font-weight:600;font-size:.75rem;text-transform:uppercase;letter-spacing:.5px;position:sticky;top:0;background:var(--card);z-index:1}
+        .user-row{cursor:pointer;transition:all .2s}
+        .user-row:hover{background:rgba(57,255,20,0.04)}
+        .geo-flag{font-size:1.2rem;margin-right:6px}
+
+        /* Badges */
+        .badge{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:20px;font-size:.7rem;font-weight:600}
+        .badge-green{background:rgba(57,255,20,0.12);color:var(--green)}
+        .badge-gold{background:rgba(255,215,0,0.12);color:var(--gold)}
+        .badge-red{background:rgba(255,68,68,0.12);color:var(--red)}
+        .badge-blue{background:rgba(79,70,229,0.12);color:#818cf8}
+        .badge-gray{background:rgba(107,114,128,0.12);color:var(--dim)}
+
+        /* Buttons */
+        .btn{
+            padding:10px 22px;border:none;border-radius:var(--radius-sm);
+            font-weight:600;cursor:pointer;font-size:.85rem;transition:all .3s;
+            font-family:inherit;display:inline-flex;align-items:center;gap:8px;
+        }
+        .btn-primary{background:linear-gradient(135deg,var(--green),#00F0FF);color:#0B0E17}
+        .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(57,255,20,0.35)}
+        .btn-outline{background:transparent;border:1px solid var(--border);color:var(--muted)}
+        .btn-outline:hover{border-color:var(--green);color:var(--text)}
+        .btn-danger{background:transparent;border:1px solid rgba(255,68,68,0.3);color:var(--red)}
+        .btn-danger:hover{background:rgba(255,68,68,0.1);border-color:var(--red)}
+        .btn-sm{padding:6px 14px;font-size:.75rem;border-radius:8px}
+        .btn-xs{padding:4px 10px;font-size:.7rem;border-radius:6px}
+
+        /* Forms */
+        .form-group{margin-bottom:16px}
+        .form-label{display:block;color:var(--muted);margin-bottom:6px;font-size:.82rem;font-weight:500}
+        .form-input,.form-select,.form-textarea{
+            width:100%;padding:12px 16px;background:var(--bg);border:1px solid var(--border);
+            border-radius:var(--radius-sm);color:var(--text);font-size:.9rem;font-family:inherit;
+            transition:all .3s;
+        }
+        .form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(57,255,20,0.1)}
+        .form-textarea{resize:vertical;min-height:80px}
+
+        /* Image Preview */
+        .img-preview{
+            width:90px;height:90px;border-radius:50%;object-fit:cover;
+            margin:8px 0;background:var(--bg);border:2px dashed var(--border);
+            display:flex;align-items:center;justify-content:center;font-size:2.2rem;
+            overflow:hidden;transition:all .3s;
+        }
+        .img-preview.has-image{border-style:solid;border-color:var(--green)}
         .img-preview img{width:100%;height:100%;object-fit:cover}
-        .file-input-wrapper{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-        .file-input-wrapper input[type="file"]{display:none}
-        .file-label{padding:8px 16px;background:#1E2538;border-radius:8px;cursor:pointer;font-size:.8rem;color:#9BA3B5}
-        .file-label:hover{background:#2a3040;color:#fff}
-        .or-divider{color:#6B7280;font-size:.75rem;margin:0 4px}
-        .geo-flag{font-size:1.3rem;margin-right:4px}
-        table{width:100%;border-collapse:collapse;font-size:.85rem}
-        th,td{padding:10px 12px;text-align:left;border-bottom:1px solid #1E2538}
-        th{color:#9BA3B5;font-weight:500;font-size:.8rem;position:sticky;top:0;background:#161B29}
-        .table-wrap{max-height:400px;overflow-y:auto;border-radius:8px}
-        .user-row{cursor:pointer;transition:background .2s}
-        .user-row:hover{background:rgba(57,255,20,0.05)}
-        .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:2000;align-items:center;justify-content:center;padding:16px}
-        .modal-overlay.active{display:flex}
-        .modal-box{background:#161B29;border:1px solid #1E2538;border-radius:16px;padding:24px;max-width:600px;width:100%;max-height:80vh;overflow-y:auto}
-        .modal-close{float:right;background:none;border:none;color:#fff;font-size:1.5rem;cursor:pointer}
-        .empty-state{text-align:center;padding:40px;color:#6B7280}
-        .empty-state .icon{font-size:3rem;margin-bottom:12px}
-        @media(max-width:768px){.charts-grid{grid-template-columns:1fr}.header{flex-direction:column;align-items:flex-start}}
+        .file-upload{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+        .file-upload input[type="file"]{display:none}
+        .file-label{
+            padding:8px 18px;background:var(--bg);border:1px solid var(--border);
+            border-radius:8px;cursor:pointer;font-size:.8rem;color:var(--muted);transition:all .3s;
+        }
+        .file-label:hover{background:var(--surface);color:var(--text);border-color:var(--green)}
+
+        /* Login */
+        .login-wrapper{display:flex;align-items:center;justify-content:center;min-height:90vh}
+        .login-box{
+            background:var(--card);border:1px solid var(--border);border-radius:24px;
+            padding:48px 40px;max-width:400px;width:100%;text-align:center;
+        }
+        .login-box input{
+            width:100%;padding:16px;background:var(--bg);border:1px solid var(--border);
+            border-radius:var(--radius-sm);color:var(--text);font-size:1rem;text-align:center;
+            margin-bottom:16px;transition:all .3s;
+        }
+        .login-box input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 4px rgba(57,255,20,0.1)}
+        .login-error{color:var(--red);margin-bottom:14px;font-size:.85rem;display:none}
+
+        /* Modal */
+        .modal-overlay{
+            display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+            background:rgba(0,0,0,0.85);z-index:2000;align-items:center;justify-content:center;
+            padding:20px;backdrop-filter:blur(4px);
+        }
+        .modal-overlay.active{display:flex;animation:fadeIn .2s ease}
+        .modal-box{
+            background:var(--card);border:1px solid var(--border);border-radius:20px;
+            padding:28px;max-width:650px;width:100%;max-height:85vh;overflow-y:auto;
+        }
+        .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+        .modal-close{background:none;border:none;color:var(--muted);font-size:1.8rem;cursor:pointer;transition:color .2s}
+        .modal-close:hover{color:var(--red)}
+        .modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+        /* Items */
+        .item-row{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--border);gap:14px;flex-wrap:wrap}
+        .item-row:last-child{border-bottom:none}
+        .item-left{display:flex;align-items:center;gap:14px;flex:1;min-width:200px}
+        .item-avatar{
+            width:52px;height:52px;border-radius:50%;object-fit:cover;background:var(--bg);
+            flex-shrink:0;display:flex;align-items:center;justify-content:center;
+            font-size:1.6rem;overflow:hidden;border:2px solid transparent;transition:all .3s;
+        }
+        .item-avatar.has-photo{border-color:var(--green)}
+        .item-avatar img{width:100%;height:100%;object-fit:cover}
+        .item-title{font-weight:600;font-size:.95rem}.item-meta{color:var(--dim);font-size:.78rem;margin-top:2px}
+        .item-actions{display:flex;gap:6px;flex-shrink:0}
+
+        /* Empty State */
+        .empty-state{text-align:center;padding:48px 20px;color:var(--dim)}
+        .empty-icon{font-size:3.5rem;margin-bottom:16px;opacity:.6}
+        .empty-title{font-size:1.1rem;font-weight:600;color:var(--muted);margin-bottom:6px}
+        .empty-desc{font-size:.85rem;max-width:350px;margin:0 auto;line-height:1.6}
+
+        /* Section Dividers */
+        .section-title{font-size:.8rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);margin-bottom:16px;font-weight:600}
+
+        /* Tooltips */
+        .info-tip{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--border);color:var(--dim);font-size:.65rem;cursor:help;font-weight:700;margin-left:4px;transition:all .2s}
+        .info-tip:hover{background:var(--green);color:#000}
+
+        /* Event Feed */
+        .event-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.03);font-size:.82rem}
+        .event-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+        .event-dot.green{background:var(--green)}.event-dot.gold{background:var(--gold)}.event-dot.blue{background:var(--blue)}.event-dot.gray{background:var(--dim)}
+        .event-time{color:var(--dim);font-size:.72rem;min-width:50px}
+
+        /* Responsive */
+        @media(max-width:900px){.charts-grid{grid-template-columns:1fr}}
+        @media(max-width:600px){
+            .header{flex-direction:column;text-align:center}
+            .stats-grid{grid-template-columns:repeat(2,1fr)}
+            .tabs{width:100%;justify-content:center}
+            .tab{padding:8px 14px;font-size:.78rem}
+            .modal-grid{grid-template-columns:1fr}
+            .stat-value{font-size:1.6rem}
+            .card{padding:16px}
+        }
+
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
     </style>
 </head>
 <body>
 <div class="container" id="app">
-    <!-- Логин -->
+    <!-- ==================== ЛОГИН ==================== -->
     <div id="loginScreen">
-        <div class="login-box">
-            <div class="logo" style="font-size:2rem;margin-bottom:24px">🐻 LuckyBear Admin</div>
-            <input type="password" id="passInput" placeholder="Введите пароль">
-            <div class="error" id="loginError" style="display:none">Неверный пароль</div>
-            <button class="btn btn-primary" onclick="login()" style="width:100%">Войти</button>
+        <div class="login-wrapper">
+            <div class="login-box">
+                <div style="font-size:3rem;margin-bottom:16px;animation:float 3s ease-in-out infinite">🐻</div>
+                <h1 style="font-weight:800;margin-bottom:6px">Lucky<span style="color:var(--green)">Bear</span></h1>
+                <p style="color:var(--muted);font-size:.85rem;margin-bottom:28px">Панель управления</p>
+                <input type="password" id="passInput" placeholder="Введите пароль" autofocus>
+                <div class="login-error" id="loginError">⛔ Неверный пароль</div>
+                <button class="btn btn-primary" onclick="login()" style="width:100%;justify-content:center;padding:14px">
+                    🔐 Войти
+                </button>
+            </div>
         </div>
     </div>
 
-    <!-- Админка -->
+    <!-- ==================== АДМИНКА ==================== -->
     <div id="adminScreen" style="display:none">
+        <!-- Header -->
         <div class="header">
-            <div class="logo">🐻 LuckyBear Admin</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-                <button class="btn btn-outline btn-sm" onclick="resetStats()" style="color:#ff6b6b">🗑 Сбросить статистику</button>
-                <button class="btn btn-outline" onclick="logout()">🚪 Выйти</button>
+            <div class="header-left">
+                <span class="logo-icon">🐻</span>
+                <div>
+                    <div class="logo-text">Lucky<span class="logo-accent">Bear</span> <span style="font-size:.7rem;color:var(--dim);font-weight:400">Admin v2.0</span></div>
+                    <div style="font-size:.75rem;color:var(--muted)"><span class="live-dot"></span>Система активна</div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-danger btn-sm" onclick="resetStats()">🗑 Сбросить статистику</button>
+                <button class="btn btn-outline btn-sm" onclick="logout()">🚪 Выйти</button>
             </div>
         </div>
 
+        <!-- Tabs -->
         <div class="tabs">
             <button class="tab active" onclick="switchTab('stats')">📊 Статистика</button>
             <button class="tab" onclick="switchTab('links')">🔗 Ссылки</button>
@@ -101,91 +293,170 @@
 
         <!-- ==================== СТАТИСТИКА ==================== -->
         <div id="tab-stats">
+            <!-- Ключевые метрики -->
             <div class="stats-grid" id="statsGrid"></div>
+
+            <!-- Графики -->
+            <div class="section-title">📈 Аналитика в реальном времени</div>
             <div class="charts-grid">
-                <div class="chart-box"><canvas id="chartVisits"></canvas></div>
-                <div class="chart-box"><canvas id="chartDevices"></canvas></div>
-                <div class="chart-box full"><canvas id="chartClicks"></canvas></div>
-                <div class="chart-box"><canvas id="chartGeo"></canvas></div>
-                <div class="chart-box"><canvas id="chartTimeOnSite"></canvas></div>
-            </div>
-            <div class="card">
-                <h3>👥 Пользователи (кликните для деталей)</h3>
-                <div id="usersTableWrap">
-                    <div class="empty-state"><div class="icon">👥</div><p>Пока нет данных</p><p style="font-size:.8rem;margin-top:4px">Статистика появится, когда посетители зайдут на лендинг</p></div>
+                <!-- Рост аудитории -->
+                <div class="chart-card">
+                    <div class="card-title">📈 Рост аудитории <span class="info-tip" title="Накопительный график уникальных пользователей по дням. Показывает, как растёт база посетителей.">?</span></div>
+                    <div class="chart-wrap"><canvas id="chartVisits"></canvas></div>
+                    <div class="chart-desc">📌 Накопительный график уникальных пользователей. Каждая точка — общее количество посетителей на эту дату.</div>
+                </div>
+
+                <!-- Устройства -->
+                <div class="chart-card">
+                    <div class="card-title">📱 Устройства <span class="info-tip" title="Распределение пользователей по типам устройств: мобильные, ПК, планшеты.">?</span></div>
+                    <div class="chart-wrap"><canvas id="chartDevices"></canvas></div>
+                    <div class="chart-desc">📌 Доля мобильного трафика обычно составляет 60-80%. Если ПК преобладает — аудитория более платёжеспособная.</div>
+                </div>
+
+                <!-- Активность по часам -->
+                <div class="chart-card full">
+                    <div class="card-title">🕐 Активность по часам <span class="info-tip" title="Интенсивность кликов и событий в каждый час суток. Помогает определить пиковые часы.">?</span></div>
+                    <div class="chart-wrap tall"><canvas id="chartClicks"></canvas></div>
+                    <div class="chart-desc">📌 Пик активности обычно приходится на вечерние часы (18:00–23:00). Используйте это для запуска акций и push-уведомлений.</div>
+                </div>
+
+                <!-- География -->
+                <div class="chart-card">
+                    <div class="card-title">🌍 География <span class="info-tip" title="Распределение пользователей по странам. Важно для таргетинга и выбора платёжных систем.">?</span></div>
+                    <div class="chart-wrap"><canvas id="chartGeo"></canvas></div>
+                    <div class="chart-desc">📌 Если преобладают страны СНГ — подключайте карты Мир, Qiwi. Если Европа — Skrill, Neteller.</div>
+                </div>
+
+                <!-- Время на сайте -->
+                <div class="chart-card">
+                    <div class="card-title">⏱ Время на сайте <span class="info-tip" title="Сколько времени пользователи проводят на лендинге. Высокое время — хороший сигнал вовлечённости.">?</span></div>
+                    <div class="chart-wrap"><canvas id="chartTimeOnSite"></canvas></div>
+                    <div class="chart-desc">📌 Среднее время на лендинге — 2-5 минут. Если меньше 30 секунд — проверьте скорость загрузки и контент.</div>
                 </div>
             </div>
-            <div class="card"><h3>📋 Лента событий</h3><div id="eventsFeed" style="max-height:300px;overflow-y:auto"></div></div>
+
+            <!-- Таблица пользователей -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">👥 Пользователи</div>
+                        <div class="card-subtitle">Кликните по строке для детальной информации</div>
+                    </div>
+                    <span class="card-badge" id="userCountBadge">0 пользователей</span>
+                </div>
+                <div id="usersTableWrap"></div>
+            </div>
+
+            <!-- Лента событий -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">📋 Лента событий</div>
+                    <span class="card-badge" id="eventCountBadge">0 событий</span>
+                </div>
+                <div id="eventsFeed" style="max-height:360px;overflow-y:auto"></div>
+            </div>
         </div>
 
         <!-- ==================== ССЫЛКИ ==================== -->
         <div id="tab-links" style="display:none">
             <div class="card">
-                <h3>🔗 Управление ссылками</h3>
-                <div class="form-group"><label>Ссылка "Забрать бонус" (Регистрация)</label><input id="regLink" placeholder="https://..."></div>
-                <div class="form-group"><label>Ссылка "Играть"</label><input id="playLink" placeholder="https://..."></div>
-                <button class="btn btn-primary" onclick="saveLinks()">💾 Сохранить</button>
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">🔗 Управление ссылками</div>
+                        <div class="card-subtitle">Изменения применяются мгновенно на лендинге</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">🎁 Ссылка «Забрать бонус» (Регистрация)</label>
+                    <input class="form-input" id="regLink" placeholder="https://ваша-партнёрская-ссылка.ру/register">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">🎮 Ссылка «Играть»</label>
+                    <input class="form-input" id="playLink" placeholder="https://ваша-партнёрская-ссылка.ру/games">
+                </div>
+                <button class="btn btn-primary" onclick="saveLinks()">💾 Сохранить изменения</button>
             </div>
         </div>
 
         <!-- ==================== ИГРЫ ==================== -->
         <div id="tab-games" style="display:none">
             <div class="card">
-                <h3 id="gameFormTitle">➕ Добавить игру</h3>
+                <div class="card-header">
+                    <div class="card-title" id="gameFormTitle">➕ Добавить игру</div>
+                </div>
                 <input type="hidden" id="gameEditId">
                 <div class="form-group">
-                    <label>🖼 Иконка (фото или emoji)</label>
+                    <label class="form-label">🖼 Иконка игры</label>
                     <div class="img-preview" id="gameImgPreview">🎰</div>
-                    <div class="file-input-wrapper">
+                    <div class="file-upload">
                         <input type="file" id="gameImgFile" accept="image/*" onchange="previewGameImg(this)">
-                        <label for="gameImgFile" class="file-label">📁 Выбрать фото</label><span class="or-divider">или</span>
+                        <label for="gameImgFile" class="file-label">📁 Загрузить фото</label>
+                        <span style="color:var(--dim);font-size:.8rem">или</span>
                     </div>
-                    <input type="text" id="gameIconEmoji" placeholder="Или emoji (🏛️)" oninput="updateGameEmojiPreview()" style="margin-top:8px">
+                    <input class="form-input" type="text" id="gameIconEmoji" placeholder="Вставьте emoji (🏛️)" oninput="updateGameEmojiPreview()" style="margin-top:8px">
                     <input type="hidden" id="gameIconData" value="">
                 </div>
-                <div class="form-group"><label>Название</label><input id="gameName" placeholder="Gates of Olympus"></div>
-                <div class="form-group"><label>RTP (%)</label><input id="gameRtp" placeholder="96.50"></div>
-                <div class="form-group"><label>Провайдер</label><input id="gameProvider" placeholder="Pragmatic Play"></div>
-                <div class="form-group"><label>Категория</label><select id="gameCat"><option value="slots">🎰 Слоты</option><option value="live">📹 Live</option><option value="crash">🚀 Краш</option></select></div>
-                <div class="form-group"><label><input type="checkbox" id="gameActive" checked> Активна</label></div>
+                <div class="form-group"><label class="form-label">Название игры</label><input class="form-input" id="gameName" placeholder="Gates of Olympus"></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                    <div class="form-group"><label class="form-label">RTP (%)</label><input class="form-input" id="gameRtp" placeholder="96.50"></div>
+                    <div class="form-group"><label class="form-label">Провайдер</label><input class="form-input" id="gameProvider" placeholder="Pragmatic Play"></div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Категория</label>
+                    <select class="form-select" id="gameCat">
+                        <option value="slots">🎰 Слоты</option><option value="live">📹 Live-дилеры</option><option value="crash">🚀 Краш-игры</option>
+                    </select>
+                </div>
+                <div class="form-group"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="gameActive" checked> <span class="form-label" style="margin:0">Показывать на сайте</span></label></div>
                 <button class="btn btn-primary" onclick="saveGame()">💾 Сохранить</button>
                 <button class="btn btn-outline" onclick="cancelGameEdit()" id="gameCancelBtn" style="display:none">Отмена</button>
             </div>
-            <div class="card"><h3>🎮 Список игр</h3><div id="gamesList"></div></div>
+            <div class="card">
+                <div class="card-header"><div class="card-title">🎮 Список игр</div><span class="card-badge" id="gameCountBadge">0 игр</span></div>
+                <div id="gamesList"></div>
+            </div>
         </div>
 
         <!-- ==================== ОТЗЫВЫ ==================== -->
         <div id="tab-reviews" style="display:none">
             <div class="card">
-                <h3 id="reviewFormTitle">➕ Добавить отзыв</h3>
+                <div class="card-header"><div class="card-title" id="reviewFormTitle">➕ Добавить отзыв</div></div>
                 <input type="hidden" id="reviewEditId">
                 <div class="form-group">
-                    <label>🖼 Аватар (фото или emoji)</label>
+                    <label class="form-label">🖼 Аватар</label>
                     <div class="img-preview" id="reviewImgPreview">👤</div>
-                    <div class="file-input-wrapper">
+                    <div class="file-upload">
                         <input type="file" id="reviewImgFile" accept="image/*" onchange="previewReviewImg(this)">
-                        <label for="reviewImgFile" class="file-label">📁 Выбрать фото</label><span class="or-divider">или</span>
+                        <label for="reviewImgFile" class="file-label">📁 Загрузить фото</label>
+                        <span style="color:var(--dim);font-size:.8rem">или</span>
                     </div>
-                    <input type="text" id="reviewAvatarEmoji" placeholder="Или emoji (👩‍🦰)" oninput="updateReviewEmojiPreview()" style="margin-top:8px">
+                    <input class="form-input" type="text" id="reviewAvatarEmoji" placeholder="Вставьте emoji (👩‍🦰)" oninput="updateReviewEmojiPreview()" style="margin-top:8px">
                     <input type="hidden" id="reviewAvatarData" value="">
                 </div>
-                <div class="form-group"><label>Имя</label><input id="reviewName" placeholder="Мария К."></div>
-                <div class="form-group"><label>Оценка</label><input id="reviewStars" type="number" min="1" max="5" value="5"></div>
-                <div class="form-group"><label>Текст</label><textarea id="reviewText" placeholder="Отличное казино..."></textarea></div>
-                <div class="form-group"><label><input type="checkbox" id="reviewActive" checked> Активен</label></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                    <div class="form-group"><label class="form-label">Имя</label><input class="form-input" id="reviewName" placeholder="Мария К."></div>
+                    <div class="form-group"><label class="form-label">Оценка (1–5)</label><input class="form-input" id="reviewStars" type="number" min="1" max="5" value="5"></div>
+                </div>
+                <div class="form-group"><label class="form-label">Текст отзыва</label><textarea class="form-textarea" id="reviewText" placeholder="Поделитесь впечатлениями..."></textarea></div>
+                <div class="form-group"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="reviewActive" checked> <span class="form-label" style="margin:0">Показывать на сайте</span></label></div>
                 <button class="btn btn-primary" onclick="saveReview()">💾 Сохранить</button>
                 <button class="btn btn-outline" onclick="cancelReviewEdit()" id="reviewCancelBtn" style="display:none">Отмена</button>
             </div>
-            <div class="card"><h3>⭐ Список отзывов</h3><div id="reviewsList"></div></div>
+            <div class="card">
+                <div class="card-header"><div class="card-title">⭐ Список отзывов</div><span class="card-badge" id="reviewCountBadge">0 отзывов</span></div>
+                <div id="reviewsList"></div>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Модалка пользователя -->
+<!-- ==================== МОДАЛКА ПОЛЬЗОВАТЕЛЯ ==================== -->
 <div class="modal-overlay" id="userModal">
     <div class="modal-box">
-        <button class="modal-close" onclick="closeUserModal()">&times;</button>
-        <h3 id="userModalTitle"></h3>
+        <div class="modal-header">
+            <h3 id="userModalTitle" style="margin:0"></h3>
+            <button class="modal-close" onclick="closeUserModal()">✕</button>
+        </div>
         <div id="userModalContent"></div>
     </div>
 </div>
@@ -199,9 +470,8 @@ const DEFAULT_PASSWORD = 'admin123';
 function getData() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-        try { return JSON.parse(raw); } catch(e) {}
+        try { const d = JSON.parse(raw); if (d && typeof d === 'object') return d; } catch(e) {}
     }
-    // Пустая структура — без фейков!
     const def = {
         password: DEFAULT_PASSWORD,
         links: { register_link: '#', play_link: '#' },
@@ -229,20 +499,23 @@ function saveData(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)
 
 // ==================== СБРОС СТАТИСТИКИ ====================
 function resetStats() {
-    if (!confirm('Удалить всю статистику посещений? Игры и отзывы останутся.')) return;
+    if (!confirm('⚠️ Вы уверены? Вся статистика посещений будет удалена. Игры и отзывы сохранятся.')) return;
     const d = getData();
-    d.users = [];
-    d.events = [];
+    d.users = []; d.events = [];
     saveData(d);
     if (document.getElementById('tab-stats').style.display !== 'none') renderStats();
-    alert('✅ Статистика сброшена');
+    alert('✅ Статистика полностью сброшена');
 }
 
 // ==================== АВТОРИЗАЦИЯ ====================
 function login() {
     if (document.getElementById('passInput').value === getData().password) {
         sessionStorage.setItem('admin_auth','1'); showAdmin();
-    } else { document.getElementById('loginError').style.display='block'; }
+    } else {
+        document.getElementById('loginError').style.display='block';
+        document.getElementById('passInput').style.borderColor='var(--red)';
+        setTimeout(()=>{document.getElementById('passInput').style.borderColor='var(--border)';},2000);
+    }
 }
 function logout() { sessionStorage.removeItem('admin_auth'); location.reload(); }
 function showAdmin() {
@@ -264,11 +537,11 @@ function switchTab(tab) {
     });
     if(tab==='stats') renderStats();
     if(tab==='links') loadLinks();
-    if(tab==='games') loadGames();
-    if(tab==='reviews') loadReviews();
+    if(tab==='games') { loadGames(); updateGameBadge(); }
+    if(tab==='reviews') { loadReviews(); updateReviewBadge(); }
 }
 
-// ==================== СТАТИСТИКА (ТОЛЬКО РЕАЛЬНЫЕ ДАННЫЕ) ====================
+// ==================== СТАТИСТИКА ====================
 let charts = {};
 
 function destroyCharts() {
@@ -284,199 +557,186 @@ function renderStats() {
 
     if (users.length === 0 && events.length === 0) {
         document.getElementById('statsGrid').innerHTML = `
-            <div class="stat-box"><div class="stat-num">0</div><div class="stat-label">👥 Пользователей</div></div>
-            <div class="stat-box"><div class="stat-num">0</div><div class="stat-label">📅 Сегодня</div></div>
-            <div class="stat-box"><div class="stat-num">0</div><div class="stat-label">🖱 Кликов</div></div>
-            <div class="stat-box"><div class="stat-num">—</div><div class="stat-label">⏱ Среднее время</div></div>
-            <div class="stat-box"><div class="stat-num">0</div><div class="stat-label">🌍 Стран</div></div>
-            <div class="stat-box"><div class="stat-num">0</div><div class="stat-label">📱 Устройств</div></div>
+            <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-value green">0</div><div class="stat-label">Пользователей</div></div>
+            <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-value green">0</div><div class="stat-label">Сегодня</div></div>
+            <div class="stat-card"><div class="stat-icon">🖱</div><div class="stat-value gold">0</div><div class="stat-label">Кликов</div></div>
+            <div class="stat-card"><div class="stat-icon">⏱</div><div class="stat-value green">—</div><div class="stat-label">Среднее время</div></div>
+            <div class="stat-card"><div class="stat-icon">🌍</div><div class="stat-value gold">0</div><div class="stat-label">Стран</div></div>
+            <div class="stat-card"><div class="stat-icon">📱</div><div class="stat-value green">0</div><div class="stat-label">Устройств</div></div>
         `;
-        document.getElementById('usersTableWrap').innerHTML = '<div class="empty-state"><div class="icon">📊</div><p>Нет данных для отображения</p><p style="font-size:.8rem;margin-top:4px">Откройте лендинг на нескольких устройствах — статистика появится здесь</p></div>';
-        document.getElementById('eventsFeed').innerHTML = '<div class="empty-state"><p>Событий пока нет</p></div>';
+        document.getElementById('usersTableWrap').innerHTML = `
+            <div class="empty-state"><div class="empty-icon">📊</div><div class="empty-title">Нет данных для отображения</div><div class="empty-desc">Откройте лендинг на нескольких устройствах — статистика появится здесь автоматически</div></div>`;
+        document.getElementById('eventsFeed').innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>Событий пока нет</p></div>';
+        document.getElementById('userCountBadge').textContent = '0 пользователей';
+        document.getElementById('eventCountBadge').textContent = '0 событий';
         destroyCharts();
         return;
     }
 
     const today = new Date().toDateString();
-    const todayUsers = users.filter(u => new Date(u.lastActive).toDateString() === today).length;
-    const todayEvents = events.filter(e => new Date(e.time).toDateString() === today).length;
+    const todayUsers = users.filter(u => u.lastActive && new Date(u.lastActive).toDateString() === today).length;
+    const todayEvents = events.filter(e => e.time && new Date(e.time).toDateString() === today).length;
     const avgTime = users.length ? Math.round(users.reduce((s,u)=>s+(u.timeOnSite||0),0)/users.length) : 0;
     const uniqueCountries = new Set(users.map(u=>u.country?.code).filter(Boolean)).size;
     const uniqueDevices = new Set(users.map(u=>u.device).filter(Boolean)).size;
 
     document.getElementById('statsGrid').innerHTML = `
-        <div class="stat-box"><div class="stat-num">${users.length}</div><div class="stat-label">👥 Пользователей</div></div>
-        <div class="stat-box"><div class="stat-num">${todayUsers}</div><div class="stat-label">📅 Сегодня</div></div>
-        <div class="stat-box"><div class="stat-num">${allClicks.length}</div><div class="stat-label">🖱 Всего кликов</div></div>
-        <div class="stat-box"><div class="stat-num">${todayEvents}</div><div class="stat-label">📋 Событий сегодня</div></div>
-        <div class="stat-box"><div class="stat-num">${avgTime ? Math.floor(avgTime/60)+'м '+avgTime%60+'с' : '—'}</div><div class="stat-label">⏱ Среднее время</div></div>
-        <div class="stat-box"><div class="stat-num">${uniqueCountries}</div><div class="stat-label">🌍 Стран</div></div>
+        <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-value green">${users.length}</div><div class="stat-label">Всего пользователей</div><div class="stat-trend up">Уникальные посетители</div></div>
+        <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-value green">${todayUsers}</div><div class="stat-label">Сегодня</div><div class="stat-trend up">Активных за 24ч</div></div>
+        <div class="stat-card"><div class="stat-icon">🖱</div><div class="stat-value gold">${allClicks.length}</div><div class="stat-label">Всего кликов</div><div class="stat-trend up">По всем кнопкам</div></div>
+        <div class="stat-card"><div class="stat-icon">📋</div><div class="stat-value gold">${todayEvents}</div><div class="stat-label">Событий сегодня</div><div class="stat-trend up">За последние 24ч</div></div>
+        <div class="stat-card"><div class="stat-icon">⏱</div><div class="stat-value green">${avgTime ? Math.floor(avgTime/60)+'м '+avgTime%60+'с' : '—'}</div><div class="stat-label">Среднее время</div><div class="stat-trend up">На сайте</div></div>
+        <div class="stat-card"><div class="stat-icon">🌍</div><div class="stat-value gold">${uniqueCountries}</div><div class="stat-label">Стран</div><div class="stat-trend up">География</div></div>
     `;
+
+    document.getElementById('userCountBadge').textContent = `${users.length} ${pluralize(users.length,'пользователь','пользователя','пользователей')}`;
+    document.getElementById('eventCountBadge').textContent = `${allClicks.length+events.length} ${pluralize(allClicks.length+events.length,'событие','события','событий')}`;
 
     destroyCharts();
 
-    // График: пользователи по дням
+    // Рост аудитории
     const days = [];
     for(let i=6;i>=0;i--) {
         const date = new Date(Date.now()-i*86400000);
         const ds = date.toDateString();
-        days.push({
-            label: date.toLocaleDateString('ru',{weekday:'short',day:'numeric'}),
-            count: users.filter(u => new Date(u.firstVisit).toDateString() <= ds).length
-        });
+        days.push({label: date.toLocaleDateString('ru',{weekday:'short',day:'numeric'}), count: users.filter(u => u.firstVisit && new Date(u.firstVisit).toDateString() <= ds).length});
     }
-    if(document.getElementById('chartVisits')) {
+    try {
         charts.chartVisits = new Chart(document.getElementById('chartVisits'),{
-            type:'line',data:{labels:days.map(d=>d.label),datasets:[{label:'Пользователи',data:days.map(d=>d.count),borderColor:'#39FF14',backgroundColor:'rgba(57,255,20,0.1)',fill:true,tension:.4,borderWidth:2}]},
-            options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9BA3B5'}},y:{ticks:{color:'#9BA3B5'},beginAtZero:true}}}
+            type:'line',data:{labels:days.map(d=>d.label),datasets:[{label:'Пользователи',data:days.map(d=>d.count),borderColor:'#39FF14',backgroundColor:'rgba(57,255,20,0.08)',fill:true,tension:.4,borderWidth:3,pointBackgroundColor:'#39FF14',pointBorderColor:'#0B0E17',pointBorderWidth:2,pointRadius:5,pointHoverRadius:7}]},
+            options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9BA3B5',font:{size:10}},grid:{color:'rgba(255,255,255,0.03)'}},y:{ticks:{color:'#9BA3B5',font:{size:10}},grid:{color:'rgba(255,255,255,0.03)'},beginAtZero:true}}}
         });
-    }
+    } catch(e) {}
 
-    // График: устройства
+    // Устройства
     const devCounts = {};
     users.forEach(u => { const dev = u.device||'Неизвестно'; devCounts[dev] = (devCounts[dev]||0)+1; });
-    if(document.getElementById('chartDevices')) {
+    try {
         charts.chartDevices = new Chart(document.getElementById('chartDevices'),{
-            type:'doughnut',data:{labels:Object.keys(devCounts),datasets:[{data:Object.values(devCounts),backgroundColor:['#39FF14','#FFD700','#4F46E5','#ff6b6b'],borderColor:'#0B0E17'}]},
-            options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#9BA3B5',fontSize:10}}}}
+            type:'doughnut',data:{labels:Object.keys(devCounts),datasets:[{data:Object.values(devCounts),backgroundColor:['#39FF14','#FFD700','#4F46E5','#ff6b6b','#00d2ff'],borderColor:'#0B0E17',borderWidth:2}]},
+            options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#9BA3B5',font:{size:10},padding:16}}}}
         });
-    }
+    } catch(e) {}
 
-    // График: события по часам
+    // Активность по часам
     const hours = Array(24).fill(0);
-    events.forEach(e => { if(e.time) hours[new Date(e.time).getHours()]++; });
-    allClicks.forEach(c => { if(c.time) hours[new Date(c.time).getHours()]++; });
-    if(document.getElementById('chartClicks')) {
+    [...events, ...allClicks].forEach(e => { if(e.time) hours[new Date(e.time).getHours()]++; });
+    try {
         charts.chartClicks = new Chart(document.getElementById('chartClicks'),{
-            type:'bar',data:{labels:Array.from({length:24},(_,i)=>`${i}:00`),datasets:[{label:'Активность',data:hours,backgroundColor:'rgba(57,255,20,0.4)',borderColor:'#39FF14',borderWidth:1,borderRadius:4}]},
-            options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9BA3B5',maxTicksLimit:12}},y:{ticks:{color:'#9BA3B5'},beginAtZero:true}}}
+            type:'bar',data:{labels:Array.from({length:24},(_,i)=>`${i}:00`),datasets:[{label:'События',data:hours,backgroundColor:ctx=>{const v=ctx.raw;const max=Math.max(...hours,1);const a=v/max;return `rgba(57,255,20,${0.1+a*0.6})`;},borderColor:'#39FF14',borderWidth:1,borderRadius:6}]},
+            options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9BA3B5',font:{size:9},maxTicksLimit:12},grid:{display:false}},y:{ticks:{color:'#9BA3B5',font:{size:9}},grid:{color:'rgba(255,255,255,0.03)'},beginAtZero:true}}}
         });
-    }
+    } catch(e) {}
 
-    // График: гео
+    // География
     const geoCounts = {};
-    users.forEach(u => {
-        if(u.country?.code) {
-            const key = (u.country.flag||'')+' '+u.country.code;
-            geoCounts[key] = (geoCounts[key]||0)+1;
-        }
-    });
-    if(document.getElementById('chartGeo') && Object.keys(geoCounts).length > 0) {
-        charts.chartGeo = new Chart(document.getElementById('chartGeo'),{
-            type:'bar',data:{labels:Object.keys(geoCounts),datasets:[{label:'Пользователи',data:Object.values(geoCounts),backgroundColor:'rgba(57,255,20,0.6)',borderRadius:4}]},
-            options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9BA3B5'},beginAtZero:true},y:{ticks:{color:'#9BA3B5'}}}}
-        });
+    users.forEach(u => { if(u.country?.code){const key=(u.country.flag||'')+' '+u.country.code;geoCounts[key]=(geoCounts[key]||0)+1;} });
+    if(Object.keys(geoCounts).length > 0) {
+        try {
+            charts.chartGeo = new Chart(document.getElementById('chartGeo'),{
+                type:'bar',data:{labels:Object.keys(geoCounts),datasets:[{label:'Пользователи',data:Object.values(geoCounts),backgroundColor:'rgba(57,255,20,0.5)',borderColor:'#39FF14',borderWidth:1,borderRadius:6}]},
+                options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9BA3B5',font:{size:9}},grid:{color:'rgba(255,255,255,0.03)'},beginAtZero:true},y:{ticks:{color:'#9BA3B5',font:{size:10}}}}}
+            });
+        } catch(e) {}
     }
 
-    // График: время на сайте
-    const timeBuckets = {'<1мин':0,'1-5мин':0,'5-15мин':0,'15-30мин':0,'30+ мин':0};
-    users.forEach(u => {
-        const t = u.timeOnSite||0;
-        if(t<60) timeBuckets['<1мин']++;
-        else if(t<300) timeBuckets['1-5мин']++;
-        else if(t<900) timeBuckets['5-15мин']++;
-        else if(t<1800) timeBuckets['15-30мин']++;
-        else timeBuckets['30+ мин']++;
-    });
-    if(document.getElementById('chartTimeOnSite')) {
+    // Время на сайте
+    const timeBuckets = {'<1 мин':0,'1-5 мин':0,'5-15 мин':0,'15-30 мин':0,'30+ мин':0};
+    users.forEach(u=>{const t=u.timeOnSite||0;if(t<60)timeBuckets['<1 мин']++;else if(t<300)timeBuckets['1-5 мин']++;else if(t<900)timeBuckets['5-15 мин']++;else if(t<1800)timeBuckets['15-30 мин']++;else timeBuckets['30+ мин']++;});
+    try {
         charts.chartTimeOnSite = new Chart(document.getElementById('chartTimeOnSite'),{
-            type:'pie',data:{labels:Object.keys(timeBuckets),datasets:[{data:Object.values(timeBuckets),backgroundColor:['#39FF14','#FFD700','#4F46E5','#ff6b6b','#00d2ff']}]},
-            options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#9BA3B5',fontSize:9}}}}
+            type:'pie',data:{labels:Object.keys(timeBuckets),datasets:[{data:Object.values(timeBuckets),backgroundColor:['#39FF14','#FFD700','#4F46E5','#ff6b6b','#00d2ff'],borderColor:'#0B0E17',borderWidth:2}]},
+            options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#9BA3B5',font:{size:9},padding:12}}}}
         });
-    }
+    } catch(e) {}
 
-    // Таблица пользователей
-    const usersSorted = [...users].sort((a,b) => new Date(b.lastActive||0) - new Date(a.lastActive||0));
+    // Таблица
+    const sorted = [...users].sort((a,b)=>new Date(b.lastActive||0)-new Date(a.lastActive||0));
     document.getElementById('usersTableWrap').innerHTML = `
-        <div class="table-wrap">
-            <table>
-                <thead><tr><th>Пользователь</th><th>Страна</th><th>Устройство</th><th>Кликов</th><th>Время</th><th>Последняя активность</th></tr></thead>
-                <tbody>${usersSorted.map(u => `
-                    <tr class="user-row" onclick="showUserDetail('${u.id}')">
-                        <td><strong>${u.nick||'User'}</strong></td>
-                        <td><span class="geo-flag">${u.country?.flag||'🌐'}</span>${u.country?.code||'—'}</td>
-                        <td>${u.device||'—'}</td>
-                        <td>${(u.clicks||[]).length}</td>
-                        <td>${Math.floor((u.timeOnSite||0)/60)}м ${(u.timeOnSite||0)%60}с</td>
-                        <td>${u.lastActive ? new Date(u.lastActive).toLocaleString('ru') : '—'}</td>
-                    </tr>`).join('')}</tbody>
-            </table>
-        </div>`;
+        <div class="table-wrap"><table>
+            <thead><tr><th>👤 Пользователь</th><th>🌍 Страна</th><th>📱 Устройство</th><th>💻 ОС</th><th>🖱 Кликов</th><th>⏱ Время</th><th>🕐 Активность</th></tr></thead>
+            <tbody>${sorted.map(u=>`<tr class="user-row" onclick="showUserDetail('${u.id}')">
+                <td><strong>${u.nick||'User_'+u.id.slice(-6)}</strong></td>
+                <td><span class="geo-flag">${u.country?.flag||'🌐'}</span>${u.country?.code||'—'}</td>
+                <td>${u.device||'—'}</td><td>${u.os||'—'}</td>
+                <td><span class="badge badge-green">${(u.clicks||[]).length}</span></td>
+                <td>${Math.floor((u.timeOnSite||0)/60)}м ${(u.timeOnSite||0)%60}с</td>
+                <td style="font-size:.78rem;color:var(--dim)">${u.lastActive?new Date(u.lastActive).toLocaleString('ru'):'—'}</td>
+            </tr>`).join('')}</tbody>
+        </table></div>`;
 
     // Лента событий
-    const allEvents = [...events].sort((a,b) => new Date(b.time||0) - new Date(a.time||0)).slice(0, 30);
-    document.getElementById('eventsFeed').innerHTML = allEvents.length > 0 ? allEvents.map(e => `
-        <div class="item-row">
-            <span style="color:#6B7280;font-size:.75rem">${e.time ? new Date(e.time).toLocaleString('ru') : '—'}</span>
-            <span class="badge badge-on">${e.event||'unknown'}</span>
-            <span style="color:#9BA3B5;font-size:.8rem">${e.meta||''}</span>
-        </div>`).join('') : '<div class="empty-state"><p>Событий пока нет</p></div>';
+    const allEv = [...events, ...allClicks].sort((a,b)=>new Date(b.time||0)-new Date(a.time||0)).slice(0,40);
+    document.getElementById('eventsFeed').innerHTML = allEv.length ? allEv.map(e=>{
+        const dotClass = (e.event||e.action||'').includes('register')?'gold':(e.event||e.action||'').includes('game')?'green':(e.event||e.action||'').includes('scroll')?'blue':'gray';
+        return `<div class="event-item"><span class="event-dot ${dotClass}"></span><span class="event-time">${e.time?new Date(e.time).toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'}):'—'}</span><span>${e.event||e.action||'unknown'}</span><span style="color:var(--dim);font-size:.75rem;margin-left:auto">${e.meta||''}</span></div>`;
+    }).join('') : '<div class="empty-state"><p>Событий пока нет</p></div>';
 }
+
+function pluralize(n,one,two,five){return n%10==1&&n%100!=11?one:n%10>=2&&n%10<=4&&(n%100<10||n%100>=20)?two:five;}
 
 // ==================== МОДАЛКА ПОЛЬЗОВАТЕЛЯ ====================
 function showUserDetail(id) {
-    const u = getData().users.find(x => x.id === id);
-    if (!u) return;
-    document.getElementById('userModalTitle').textContent = `👤 ${u.nick||'User'} — детальная статистика`;
+    const u = getData().users.find(x=>x.id===id); if(!u) return;
+    document.getElementById('userModalTitle').innerHTML = `👤 ${u.nick||'User'} <span style="font-size:.75rem;color:var(--dim);font-weight:400">ID: ${u.id.slice(-12)}</span>`;
     document.getElementById('userModalContent').innerHTML = `
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
-            <div><strong>🌍 Страна:</strong> ${u.country?.flag||'🌐'} ${u.country?.name||'Неизвестно'}${u.city ? ', '+u.city : ''}</div>
+        <div class="modal-grid">
+            <div><strong>🌍 Страна:</strong> ${u.country?.flag||'🌐'} ${u.country?.name||'Неизвестно'}${u.city?', '+u.city:''}</div>
             <div><strong>📱 Устройство:</strong> ${u.device||'—'}</div>
             <div><strong>💻 ОС:</strong> ${u.os||'—'}</div>
             <div><strong>🌐 Браузер:</strong> ${u.browser||'—'}</div>
             <div><strong>📐 Экран:</strong> ${u.screen||'—'}</div>
             <div><strong>🔢 IP:</strong> ${u.ip||'—'}</div>
-            <div><strong>🕐 Первый визит:</strong> ${u.firstVisit ? new Date(u.firstVisit).toLocaleString('ru') : '—'}</div>
-            <div><strong>🕐 Активность:</strong> ${u.lastActive ? new Date(u.lastActive).toLocaleString('ru') : '—'}</div>
+            <div><strong>🕐 Первый визит:</strong> ${u.firstVisit?new Date(u.firstVisit).toLocaleString('ru'):'—'}</div>
+            <div><strong>🕐 Активность:</strong> ${u.lastActive?new Date(u.lastActive).toLocaleString('ru'):'—'}</div>
             <div><strong>⏱ Время:</strong> ${Math.floor((u.timeOnSite||0)/60)}м ${(u.timeOnSite||0)%60}с</div>
             <div><strong>🖱 Кликов:</strong> ${(u.clicks||[]).length}</div>
         </div>
-        <h4 style="margin-bottom:8px">📋 История кликов:</h4>
-        ${(u.clicks||[]).sort((a,b)=>new Date(b.time||0)-new Date(a.time||0)).map(c => `
-            <div style="padding:6px 0;border-bottom:1px solid #1E2538;font-size:.85rem">
-                ${c.time ? new Date(c.time).toLocaleString('ru') : '—'} — <span style="color:#39FF14">${c.action||'unknown'}</span> ${c.meta||''}
-            </div>`).join('') || '<p style="color:#6B7280">Нет данных</p>'}
+        <h4 style="margin:20px 0 10px">📋 История кликов (${(u.clicks||[]).length}):</h4>
+        ${(u.clicks||[]).sort((a,b)=>new Date(b.time||0)-new Date(a.time||0)).map(c=>`<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:.82rem">${c.time?new Date(c.time).toLocaleString('ru'):'—'} — <span style="color:var(--green)">${c.action||'unknown'}</span> ${c.meta||''}</div>`).join('')||'<p style="color:var(--dim)">Нет записанных кликов</p>'}
     `;
     document.getElementById('userModal').classList.add('active');
 }
-
-function closeUserModal() { document.getElementById('userModal').classList.remove('active'); }
+function closeUserModal(){document.getElementById('userModal').classList.remove('active');}
 document.getElementById('userModal')?.addEventListener('click',function(e){if(e.target===this)closeUserModal();});
 
 // ==================== ССЫЛКИ ====================
 function loadLinks(){const d=getData();document.getElementById('regLink').value=d.links.register_link;document.getElementById('playLink').value=d.links.play_link}
-function saveLinks(){const d=getData();d.links.register_link=document.getElementById('regLink').value;d.links.play_link=document.getElementById('playLink').value;saveData(d);alert('✅ Сохранено!')}
+function saveLinks(){const d=getData();d.links.register_link=document.getElementById('regLink').value;d.links.play_link=document.getElementById('playLink').value;saveData(d);alert('✅ Ссылки обновлены!')}
 
 // ==================== ИГРЫ ====================
-function getGameIconHTML(game){if(game.iconType==='image'&&game.icon?.startsWith('data:image'))return`<img src="${game.icon}" alt="${game.name}">`;return game.icon||'🎰'}
-function loadGames(){const d=getData();document.getElementById('gamesList').innerHTML=d.games.map(g=>`<div class="item-row"><div class="item-left"><div class="item-avatar">${getGameIconHTML(g)}</div><div class="item-info"><div class="item-name">${g.name}</div><div class="item-meta">RTP ${g.rtp}% | ${g.provider} | ${g.category}</div></div></div><span class="badge ${g.is_active?'badge-on':'badge-off'}">${g.is_active?'Активна':'Скрыта'}</span><div class="item-actions"><button class="btn btn-outline btn-sm" onclick="editGame(${g.id})">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteGame(${g.id})">🗑</button></div></div>`).join('')||'<p style="color:#6B7280;text-align:center;padding:20px">Нет игр</p>'}
-function editGame(id){const d=getData();const g=d.games.find(x=>x.id===id);if(!g)return;document.getElementById('gameEditId').value=g.id;document.getElementById('gameName').value=g.name;document.getElementById('gameRtp').value=g.rtp;document.getElementById('gameProvider').value=g.provider;document.getElementById('gameCat').value=g.category;document.getElementById('gameActive').checked=g.is_active;document.getElementById('gameIconData').value=g.icon||'';document.getElementById('gameIconEmoji').value='';document.getElementById('gameImgFile').value='';if(g.iconType==='image'&&g.icon?.startsWith('data:image')){document.getElementById('gameImgPreview').innerHTML=`<img src="${g.icon}" alt="preview">`}else{document.getElementById('gameImgPreview').textContent=g.icon||'🎰'}document.getElementById('gameFormTitle').textContent='✏️ Редактировать игру';document.getElementById('gameCancelBtn').style.display='inline-block';switchTab('games')}
-function cancelGameEdit(){document.getElementById('gameEditId').value='';document.getElementById('gameName').value='';document.getElementById('gameRtp').value='';document.getElementById('gameProvider').value='';document.getElementById('gameIconData').value='';document.getElementById('gameIconEmoji').value='';document.getElementById('gameImgFile').value='';document.getElementById('gameImgPreview').textContent='🎰';document.getElementById('gameFormTitle').textContent='➕ Добавить игру';document.getElementById('gameCancelBtn').style.display='none';loadGames()}
-function saveGame(){const d=getData();const id=document.getElementById('gameEditId').value;const iconData=document.getElementById('gameIconData').value;const isImage=iconData&&iconData.startsWith('data:image');const obj={id:id?parseInt(id):Date.now(),name:document.getElementById('gameName').value||'Без названия',icon:iconData||'🎰',iconType:isImage?'image':'emoji',rtp:document.getElementById('gameRtp').value||'96.00',provider:document.getElementById('gameProvider').value||'',category:document.getElementById('gameCat').value,is_active:document.getElementById('gameActive').checked};if(id){const idx=d.games.findIndex(x=>x.id===parseInt(id));if(idx>=0)d.games[idx]=obj}else{d.games.push(obj)}saveData(d);cancelGameEdit();alert('✅ Сохранено!')}
-function deleteGame(id){if(!confirm('Удалить?'))return;const d=getData();d.games=d.games.filter(x=>x.id!==id);saveData(d);loadGames()}
+function getGameIconHTML(g){if(g.iconType==='image'&&g.icon?.startsWith('data:image'))return`<img src="${g.icon}" alt="">`;return g.icon||'🎰'}
+function loadGames(){const d=getData();document.getElementById('gamesList').innerHTML=d.games.map(g=>`<div class="item-row"><div class="item-left"><div class="item-avatar ${g.iconType==='image'?'has-photo':''}">${getGameIconHTML(g)}</div><div class="item-info"><div class="item-title">${g.name}</div><div class="item-meta">RTP ${g.rtp}% · ${g.provider} · ${g.category}</div></div></div><span class="badge ${g.is_active?'badge-green':'badge-red'}">${g.is_active?'Активна':'Скрыта'}</span><div class="item-actions"><button class="btn btn-outline btn-xs" onclick="editGame(${g.id})">✏️</button><button class="btn btn-danger btn-xs" onclick="deleteGame(${g.id})">🗑</button></div></div>`).join('')||'<div class="empty-state"><div class="empty-icon">🎮</div><p>Нет добавленных игр</p></div>'}
+function updateGameBadge(){document.getElementById('gameCountBadge').textContent=getData().games.length+' '+pluralize(getData().games.length,'игра','игры','игр')}
+function editGame(id){const d=getData();const g=d.games.find(x=>x.id===id);if(!g)return;document.getElementById('gameEditId').value=g.id;document.getElementById('gameName').value=g.name;document.getElementById('gameRtp').value=g.rtp;document.getElementById('gameProvider').value=g.provider;document.getElementById('gameCat').value=g.category;document.getElementById('gameActive').checked=g.is_active;document.getElementById('gameIconData').value=g.icon||'';document.getElementById('gameIconEmoji').value='';document.getElementById('gameImgFile').value='';const prev=document.getElementById('gameImgPreview');if(g.iconType==='image'&&g.icon?.startsWith('data:image')){prev.innerHTML=`<img src="${g.icon}" alt="">`;prev.classList.add('has-image')}else{prev.textContent=g.icon||'🎰';prev.classList.remove('has-image')}document.getElementById('gameFormTitle').textContent='✏️ Редактировать игру';document.getElementById('gameCancelBtn').style.display='inline-flex';switchTab('games')}
+function cancelGameEdit(){['gameEditId','gameName','gameRtp','gameProvider','gameIconData','gameIconEmoji'].forEach(id=>document.getElementById(id).value='');document.getElementById('gameImgFile').value='';const prev=document.getElementById('gameImgPreview');prev.textContent='🎰';prev.classList.remove('has-image');document.getElementById('gameFormTitle').textContent='➕ Добавить игру';document.getElementById('gameCancelBtn').style.display='none';loadGames()}
+function saveGame(){const d=getData();const id=document.getElementById('gameEditId').value;const iconData=document.getElementById('gameIconData').value;const isImage=iconData&&iconData.startsWith('data:image');const obj={id:id?parseInt(id):Date.now(),name:document.getElementById('gameName').value||'Без названия',icon:iconData||'🎰',iconType:isImage?'image':'emoji',rtp:document.getElementById('gameRtp').value||'96.00',provider:document.getElementById('gameProvider').value||'',category:document.getElementById('gameCat').value,is_active:document.getElementById('gameActive').checked};if(id){const i=d.games.findIndex(x=>x.id===parseInt(id));if(i>=0)d.games[i]=obj}else{d.games.push(obj)}saveData(d);cancelGameEdit();alert('✅ Игра сохранена!')}
+function deleteGame(id){if(!confirm('Удалить игру?'))return;const d=getData();d.games=d.games.filter(x=>x.id!==id);saveData(d);loadGames();updateGameBadge()}
 
-async function previewGameImg(input){if(input.files&&input.files[0]){const base64=await fileToBase64(input.files[0]);document.getElementById('gameIconData').value=base64;document.getElementById('gameImgPreview').innerHTML=`<img src="${base64}" alt="preview">`;document.getElementById('gameIconEmoji').value=''}}
-function updateGameEmojiPreview(){const emoji=document.getElementById('gameIconEmoji').value;if(emoji){document.getElementById('gameIconData').value=emoji;document.getElementById('gameImgPreview').textContent=emoji;document.getElementById('gameImgFile').value=''}}
+async function previewGameImg(input){if(input.files&&input.files[0]){const b64=await fileToBase64(input.files[0]);document.getElementById('gameIconData').value=b64;const prev=document.getElementById('gameImgPreview');prev.innerHTML=`<img src="${b64}" alt="">`;prev.classList.add('has-image');document.getElementById('gameIconEmoji').value=''}}
+function updateGameEmojiPreview(){const e=document.getElementById('gameIconEmoji').value;if(e){document.getElementById('gameIconData').value=e;const prev=document.getElementById('gameImgPreview');prev.textContent=e;prev.classList.remove('has-image');document.getElementById('gameImgFile').value=''}}
 
 // ==================== ОТЗЫВЫ ====================
-function getAvatarHTML(item){if(item.avatarType==='image'&&item.avatar?.startsWith('data:image'))return`<img src="${item.avatar}" alt="${item.name}">`;return item.avatar||'👤'}
-function loadReviews(){const d=getData();document.getElementById('reviewsList').innerHTML=d.reviews.map(r=>`<div class="item-row"><div class="item-left"><div class="item-avatar">${getAvatarHTML(r)}</div><div class="item-info"><div class="item-name">${r.name} ${'⭐'.repeat(r.stars)}</div><div class="item-meta">${r.text.substring(0,80)}...</div></div></div><span class="badge ${r.is_active?'badge-on':'badge-off'}">${r.is_active?'Активен':'Скрыт'}</span><div class="item-actions"><button class="btn btn-outline btn-sm" onclick="editReview(${r.id})">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteReview(${r.id})">🗑</button></div></div>`).join('')||'<p style="color:#6B7280">Нет отзывов</p>'}
-function editReview(id){const d=getData();const r=d.reviews.find(x=>x.id===id);if(!r)return;document.getElementById('reviewEditId').value=r.id;document.getElementById('reviewName').value=r.name;document.getElementById('reviewStars').value=r.stars;document.getElementById('reviewText').value=r.text;document.getElementById('reviewActive').checked=r.is_active;document.getElementById('reviewAvatarData').value=r.avatar||'';document.getElementById('reviewAvatarEmoji').value='';document.getElementById('reviewImgFile').value='';if(r.avatarType==='image'&&r.avatar?.startsWith('data:image')){document.getElementById('reviewImgPreview').innerHTML=`<img src="${r.avatar}" alt="preview">`}else{document.getElementById('reviewImgPreview').textContent=r.avatar||'👤'}document.getElementById('reviewFormTitle').textContent='✏️ Редактировать отзыв';document.getElementById('reviewCancelBtn').style.display='inline-block';switchTab('reviews')}
-function cancelReviewEdit(){document.getElementById('reviewEditId').value='';document.getElementById('reviewName').value='';document.getElementById('reviewStars').value='5';document.getElementById('reviewText').value='';document.getElementById('reviewAvatarData').value='';document.getElementById('reviewAvatarEmoji').value='';document.getElementById('reviewImgFile').value='';document.getElementById('reviewImgPreview').textContent='👤';document.getElementById('reviewFormTitle').textContent='➕ Добавить отзыв';document.getElementById('reviewCancelBtn').style.display='none';loadReviews()}
-function saveReview(){const d=getData();const id=document.getElementById('reviewEditId').value;const avatarData=document.getElementById('reviewAvatarData').value;const isImage=avatarData&&avatarData.startsWith('data:image');const obj={id:id?parseInt(id):Date.now(),name:document.getElementById('reviewName').value||'Игрок',avatar:avatarData||'👤',avatarType:isImage?'image':'emoji',stars:parseInt(document.getElementById('reviewStars').value)||5,text:document.getElementById('reviewText').value||'',is_active:document.getElementById('reviewActive').checked};if(id){const idx=d.reviews.findIndex(x=>x.id===parseInt(id));if(idx>=0)d.reviews[idx]=obj}else{d.reviews.push(obj)}saveData(d);cancelReviewEdit();alert('✅ Сохранено!')}
-function deleteReview(id){if(!confirm('Удалить?'))return;const d=getData();d.reviews=d.reviews.filter(x=>x.id!==id);saveData(d);loadReviews()}
+function getAvatarHTML(r){if(r.avatarType==='image'&&r.avatar?.startsWith('data:image'))return`<img src="${r.avatar}" alt="">`;return r.avatar||'👤'}
+function loadReviews(){const d=getData();document.getElementById('reviewsList').innerHTML=d.reviews.map(r=>`<div class="item-row"><div class="item-left"><div class="item-avatar ${r.avatarType==='image'?'has-photo':''}">${getAvatarHTML(r)}</div><div class="item-info"><div class="item-title">${r.name} ${'⭐'.repeat(r.stars)}</div><div class="item-meta">${r.text.substring(0,90)}...</div></div></div><span class="badge ${r.is_active?'badge-green':'badge-red'}">${r.is_active?'Активен':'Скрыт'}</span><div class="item-actions"><button class="btn btn-outline btn-xs" onclick="editReview(${r.id})">✏️</button><button class="btn btn-danger btn-xs" onclick="deleteReview(${r.id})">🗑</button></div></div>`).join('')||'<div class="empty-state"><div class="empty-icon">⭐</div><p>Нет добавленных отзывов</p></div>'}
+function updateReviewBadge(){document.getElementById('reviewCountBadge').textContent=getData().reviews.length+' '+pluralize(getData().reviews.length,'отзыв','отзыва','отзывов')}
+function editReview(id){const d=getData();const r=d.reviews.find(x=>x.id===id);if(!r)return;document.getElementById('reviewEditId').value=r.id;document.getElementById('reviewName').value=r.name;document.getElementById('reviewStars').value=r.stars;document.getElementById('reviewText').value=r.text;document.getElementById('reviewActive').checked=r.is_active;document.getElementById('reviewAvatarData').value=r.avatar||'';document.getElementById('reviewAvatarEmoji').value='';document.getElementById('reviewImgFile').value='';const prev=document.getElementById('reviewImgPreview');if(r.avatarType==='image'&&r.avatar?.startsWith('data:image')){prev.innerHTML=`<img src="${r.avatar}" alt="">`;prev.classList.add('has-image')}else{prev.textContent=r.avatar||'👤';prev.classList.remove('has-image')}document.getElementById('reviewFormTitle').textContent='✏️ Редактировать отзыв';document.getElementById('reviewCancelBtn').style.display='inline-flex';switchTab('reviews')}
+function cancelReviewEdit(){['reviewEditId','reviewName','reviewStars','reviewText','reviewAvatarData','reviewAvatarEmoji'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=id==='reviewStars'?'5':''});document.getElementById('reviewImgFile').value='';const prev=document.getElementById('reviewImgPreview');prev.textContent='👤';prev.classList.remove('has-image');document.getElementById('reviewFormTitle').textContent='➕ Добавить отзыв';document.getElementById('reviewCancelBtn').style.display='none';loadReviews()}
+function saveReview(){const d=getData();const id=document.getElementById('reviewEditId').value;const av=document.getElementById('reviewAvatarData').value;const isImg=av&&av.startsWith('data:image');const obj={id:id?parseInt(id):Date.now(),name:document.getElementById('reviewName').value||'Игрок',avatar:av||'👤',avatarType:isImg?'image':'emoji',stars:parseInt(document.getElementById('reviewStars').value)||5,text:document.getElementById('reviewText').value||'',is_active:document.getElementById('reviewActive').checked};if(id){const i=d.reviews.findIndex(x=>x.id===parseInt(id));if(i>=0)d.reviews[i]=obj}else{d.reviews.push(obj)}saveData(d);cancelReviewEdit();alert('✅ Отзыв сохранён!')}
+function deleteReview(id){if(!confirm('Удалить отзыв?'))return;const d=getData();d.reviews=d.reviews.filter(x=>x.id!==id);saveData(d);loadReviews();updateReviewBadge()}
 
-async function previewReviewImg(input){if(input.files&&input.files[0]){const base64=await fileToBase64(input.files[0]);document.getElementById('reviewAvatarData').value=base64;document.getElementById('reviewImgPreview').innerHTML=`<img src="${base64}" alt="preview">`;document.getElementById('reviewAvatarEmoji').value=''}}
-function updateReviewEmojiPreview(){const emoji=document.getElementById('reviewAvatarEmoji').value;if(emoji){document.getElementById('reviewAvatarData').value=emoji;document.getElementById('reviewImgPreview').textContent=emoji;document.getElementById('reviewImgFile').value=''}}
+async function previewReviewImg(input){if(input.files&&input.files[0]){const b64=await fileToBase64(input.files[0]);document.getElementById('reviewAvatarData').value=b64;const prev=document.getElementById('reviewImgPreview');prev.innerHTML=`<img src="${b64}" alt="">`;prev.classList.add('has-image');document.getElementById('reviewAvatarEmoji').value=''}}
+function updateReviewEmojiPreview(){const e=document.getElementById('reviewAvatarEmoji').value;if(e){document.getElementById('reviewAvatarData').value=e;const prev=document.getElementById('reviewImgPreview');prev.textContent=e;prev.classList.remove('has-image');document.getElementById('reviewImgFile').value=''}}
 
-function fileToBase64(file){return new Promise((resolve)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.readAsDataURL(file)})}
+function fileToBase64(file){return new Promise(r=>{const reader=new FileReader();reader.onload=()=>r(reader.result);reader.readAsDataURL(file)})}
 
 // ==================== ИНИТ ====================
 function init(){
-    getData();
+    const d = getData();
     if(sessionStorage.getItem('admin_auth')==='1') showAdmin();
+    document.getElementById('passInput')?.addEventListener('keydown',function(e){if(e.key==='Enter')login();});
 }
 init();
 </script>
 </body>
-                        </html>
+                                                </html>
