@@ -2,13 +2,192 @@
     'use strict';
 
     const CONFIG = {
-        apiUrl: null,
-        trackUrl: null,
         useLocalStorage: true,
         defaultLinks: { register: '#', play: '#' },
         bonusEndTime: new Date().getTime() + (5 * 3600 + 42 * 60 + 18) * 1000,
     };
 
+    // ==================== ГЕНЕРАЦИЯ УНИКАЛЬНОГО ID ПОЛЬЗОВАТЕЛЯ ====================
+    function getUserId() {
+        let userId = localStorage.getItem('luckybear_user_id');
+        if (!userId) {
+            userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('luckybear_user_id', userId);
+        }
+        return userId;
+    }
+
+    // ==================== ОПРЕДЕЛЕНИЕ ДАННЫХ ПОЛЬЗОВАТЕЛЯ ====================
+    function getDeviceInfo() {
+        const ua = navigator.userAgent;
+        let device = 'Desktop';
+        let os = 'Unknown';
+        let browser = 'Unknown';
+
+        if (/Mobi|Android|iPhone|iPod/i.test(ua)) device = 'Mobile';
+        else if (/iPad|Tablet/i.test(ua)) device = 'Tablet';
+
+        if (/Windows/i.test(ua)) os = 'Windows';
+        else if (/Mac OS/i.test(ua)) os = 'macOS';
+        else if (/Android/i.test(ua)) os = 'Android';
+        else if (/iOS|iPhone|iPad/i.test(ua)) os = 'iOS';
+        else if (/Linux/i.test(ua)) os = 'Linux';
+
+        if (/Chrome/i.test(ua) && !/Edge/i.test(ua)) browser = 'Chrome';
+        else if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) browser = 'Safari';
+        else if (/Firefox/i.test(ua)) browser = 'Firefox';
+        else if (/Edge/i.test(ua)) browser = 'Edge';
+        else if (/Samsung/i.test(ua)) browser = 'Samsung Internet';
+        else if (/Opera|OPR/i.test(ua)) browser = 'Opera';
+
+        const screen = `${window.screen.width}×${window.screen.height}`;
+        return { device, os, browser, screen, userAgent: ua };
+    }
+
+    // ==================== ПОЛУЧЕНИЕ ГЕО ЧЕРЕЗ API ====================
+    async function getGeoData() {
+        // Пробуем несколько бесплатных API
+        const apis = [
+            'https://ipapi.co/json/',
+            'https://ipwhois.app/json/',
+            'https://api.ipify.org?format=json'
+        ];
+
+        for (const api of apis) {
+            try {
+                const resp = await fetch(api, { signal: AbortSignal.timeout(3000) });
+                const data = await resp.json();
+
+                if (data.country_code) {
+                    return {
+                        code: data.country_code,
+                        name: data.country_name || data.country || '',
+                        city: data.city || '',
+                        flag: getFlagEmoji(data.country_code),
+                        ip: data.ip || ''
+                    };
+                }
+            } catch(e) {
+                continue;
+            }
+        }
+
+        // Если все API не ответили — возвращаем неизвестно
+        return {
+            code: 'XX',
+            name: 'Неизвестно',
+            city: '',
+            flag: '🌐',
+            ip: ''
+        };
+    }
+
+    function getFlagEmoji(countryCode) {
+        if (!countryCode || countryCode === 'XX') return '🌐';
+        const codePoints = countryCode.toUpperCase().split('').map(char => 127397 + char.charCodeAt());
+        return String.fromCodePoint(...codePoints);
+    }
+
+    // ==================== СОХРАНЕНИЕ РЕАЛЬНЫХ ДАННЫХ В АДМИНКУ ====================
+    function saveRealUserData(geoData) {
+        if (!CONFIG.useLocalStorage) return;
+
+        const userId = getUserId();
+        const deviceInfo = getDeviceInfo();
+        const raw = localStorage.getItem('luckybear_admin');
+
+        let adminData;
+        if (raw) {
+            try { adminData = JSON.parse(raw); } catch(e) { adminData = null; }
+        }
+
+        if (!adminData || !adminData.users) {
+            // Создаём структуру если нет
+            adminData = adminData || {};
+            adminData.users = adminData.users || [];
+            adminData.events = adminData.events || [];
+            adminData.links = adminData.links || { register_link: '#', play_link: '#' };
+            adminData.games = adminData.games || [];
+            adminData.reviews = adminData.reviews || [];
+            adminData.password = adminData.password || 'admin123';
+        }
+
+        // Ищем существующего пользователя
+        const existingUserIndex = adminData.users.findIndex(u => u.id === userId);
+
+        const userData = {
+            id: userId,
+            nick: 'User_' + userId.split('_')[1],
+            country: {
+                code: geoData.code,
+                name: geoData.name,
+                flag: geoData.flag
+            },
+            city: geoData.city,
+            device: deviceInfo.device,
+            os: deviceInfo.os,
+            browser: deviceInfo.browser,
+            screen: deviceInfo.screen,
+            ip: geoData.ip,
+            firstVisit: existingUserIndex >= 0 ? adminData.users[existingUserIndex].firstVisit : new Date().toISOString(),
+            lastActive: new Date().toISOString(),
+            timeOnSite: existingUserIndex >= 0 ? (adminData.users[existingUserIndex].timeOnSite || 0) + 1 : 1,
+            clicks: existingUserIndex >= 0 ? adminData.users[existingUserIndex].clicks || [] : []
+        };
+
+        if (existingUserIndex >= 0) {
+            adminData.users[existingUserIndex] = userData;
+        } else {
+            adminData.users.push(userData);
+        }
+
+        // Ограничиваем количество пользователей (последние 200)
+        if (adminData.users.length > 200) {
+            adminData.users = adminData.users.slice(-200);
+        }
+
+        localStorage.setItem('luckybear_admin', JSON.stringify(adminData));
+        return { adminData, userIndex: existingUserIndex >= 0 ? existingUserIndex : adminData.users.length - 1 };
+    }
+
+    // ==================== ТРЕКИНГ СОБЫТИЙ ====================
+    function trackEvent(event, data = {}) {
+        if (!CONFIG.useLocalStorage) return;
+
+        const raw = localStorage.getItem('luckybear_admin');
+        if (!raw) return;
+
+        try {
+            const adminData = JSON.parse(raw);
+            const userId = getUserId();
+
+            // Добавляем событие в общую ленту
+            adminData.events.unshift({
+                event: event,
+                meta: JSON.stringify(data),
+                time: new Date().toISOString(),
+                userId: userId
+            });
+            if (adminData.events.length > 500) adminData.events = adminData.events.slice(0, 500);
+
+            // Добавляем клик пользователю
+            const user = adminData.users.find(u => u.id === userId);
+            if (user) {
+                user.clicks.push({
+                    action: event,
+                    meta: JSON.stringify(data),
+                    time: new Date().toISOString()
+                });
+                user.lastActive = new Date().toISOString();
+                // Ограничиваем историю кликов
+                if (user.clicks.length > 100) user.clicks = user.clicks.slice(-100);
+            }
+
+            localStorage.setItem('luckybear_admin', JSON.stringify(adminData));
+        } catch(e) {}
+    }
+
+    // ==================== DOM ====================
     const DOM = {
         navbar: document.getElementById('navbar'),
         mobileMenuBtn: document.getElementById('mobileMenuBtn'),
@@ -27,17 +206,43 @@
         particles: document.getElementById('particles'),
     };
 
-    function init() {
+    // ==================== ИНИЦИАЛИЗАЦИЯ ====================
+    async function init() {
         createParticles();
         initNavbar();
         initMobileMenu();
         initBonusTimer();
+
+        // Получаем гео и сохраняем пользователя
+        const geoData = await getGeoData();
+        saveRealUserData(geoData);
+
         loadDynamicContent();
         initExitPopup();
         initModals();
         initSmoothScroll();
         initTabs();
         trackPageView();
+
+        // Отслеживаем время на сайте
+        startTimeOnSiteTracking();
+    }
+
+    function startTimeOnSiteTracking() {
+        setInterval(() => {
+            const raw = localStorage.getItem('luckybear_admin');
+            if (!raw) return;
+            try {
+                const adminData = JSON.parse(raw);
+                const userId = getUserId();
+                const user = adminData.users.find(u => u.id === userId);
+                if (user) {
+                    user.timeOnSite = (user.timeOnSite || 0) + 5;
+                    user.lastActive = new Date().toISOString();
+                    localStorage.setItem('luckybear_admin', JSON.stringify(adminData));
+                }
+            } catch(e) {}
+        }, 5000); // Каждые 5 секунд
     }
 
     function createParticles() {
@@ -96,8 +301,16 @@
                 try {
                     const adminData = JSON.parse(raw);
                     updateLinks(adminData.links);
-                    renderGames(adminData.games.filter(g => g.is_active));
-                    renderReviews(adminData.reviews.filter(r => r.is_active));
+                    if (adminData.games && adminData.games.length > 0) {
+                        renderGames(adminData.games.filter(g => g.is_active));
+                    } else {
+                        renderDefaultGames();
+                    }
+                    if (adminData.reviews && adminData.reviews.length > 0) {
+                        renderReviews(adminData.reviews.filter(r => r.is_active));
+                    } else {
+                        renderDefaultReviews();
+                    }
                     return;
                 } catch(e) {}
             }
@@ -112,7 +325,6 @@
         document.querySelectorAll('[data-play-link]').forEach(l => l.href = links.play_link || CONFIG.defaultLinks.play);
     }
 
-    // ============ РЕНДЕР ИГР (с поддержкой фото) ============
     function renderGames(games) {
         if (!DOM.gamesGrid) return;
         if (!games || !games.length) { renderDefaultGames(); return; }
@@ -152,7 +364,6 @@
         ]);
     }
 
-    // ============ РЕНДЕР ОТЗЫВОВ (с поддержкой фото) ============
     function renderReviews(reviews) {
         if (!DOM.reviewsGrid) return;
         if (!reviews || !reviews.length) { renderDefaultReviews(); return; }
@@ -200,7 +411,13 @@
     function initExitPopup() {
         if (!DOM.exitPopup) return;
         let shown = false;
-        document.addEventListener('mouseleave', e => { if (e.clientY <= 0 && !shown) { DOM.exitPopup.classList.add('active'); shown = true; trackEvent('exit_intent'); } });
+        document.addEventListener('mouseleave', e => {
+            if (e.clientY <= 0 && !shown) {
+                DOM.exitPopup.classList.add('active');
+                shown = true;
+                trackEvent('exit_intent');
+            }
+        });
         DOM.exitPopupClose?.addEventListener('click', () => DOM.exitPopup.classList.remove('active'));
         DOM.exitPopup.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); });
     }
@@ -227,25 +444,22 @@
         }));
     }
 
-    function trackEvent(event, data = {}) {
-        if (CONFIG.useLocalStorage) {
-            const raw = localStorage.getItem('luckybear_admin');
-            if (raw) {
-                try {
-                    const adminData = JSON.parse(raw);
-                    adminData.events.unshift({event: event, meta: JSON.stringify(data), time: new Date().toLocaleString('ru')});
-                    if (adminData.events.length > 100) adminData.events = adminData.events.slice(0, 100);
-                    localStorage.setItem('luckybear_admin', JSON.stringify(adminData));
-                } catch(e) {}
-            }
-        }
-    }
-
     function trackPageView() {
         trackEvent('page_view', {page:'home'});
         document.querySelectorAll('[data-reg-link],[data-play-link]').forEach(b => b.addEventListener('click', function() {
-            trackEvent(this.dataset.regLink ? 'register_click' : 'play_click', {button: this.textContent.trim(), position: this.closest('section')?.id || 'unknown'});
+            trackEvent(this.dataset.regLink ? 'register_click' : 'play_click', {
+                button: this.textContent.trim(),
+                position: this.closest('section')?.id || 'unknown'
+            });
         }));
+
+        // Отслеживание скролла
+        let scrollTracked = {50: false, 100: false};
+        window.addEventListener('scroll', () => {
+            const scrollPercent = Math.round((window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100);
+            if (scrollPercent >= 50 && !scrollTracked[50]) { scrollTracked[50] = true; trackEvent('scroll_50%'); }
+            if (scrollPercent >= 90 && !scrollTracked[100]) { scrollTracked[100] = true; trackEvent('scroll_100%'); }
+        });
     }
 
     document.addEventListener('DOMContentLoaded', init);
